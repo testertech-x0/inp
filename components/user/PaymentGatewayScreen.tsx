@@ -1,0 +1,192 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useApp } from '../../context/AppContext';
+import { ShieldCheck, TrendingUp, CheckCircle, ClipboardCopy, Upload, Camera } from 'lucide-react';
+
+const PaymentGatewayScreen: React.FC = () => {
+  const { pendingDeposit, submitDepositRequest, setCurrentView, appName, appLogo, addNotification } = useApp();
+  const [status, setStatus] = useState<'pending' | 'processing' | 'submitted'>('pending');
+  const [proofImage, setProofImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!pendingDeposit) {
+      setCurrentView('deposit');
+    }
+  }, [pendingDeposit, setCurrentView]);
+
+  if (!pendingDeposit) {
+    return null; 
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              setProofImage(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+      }
+  };
+
+  const handleSubmitProof = async () => {
+    if (!proofImage) {
+        addNotification('Please upload a screenshot of the payment.', 'error');
+        return;
+    }
+
+    setStatus('processing');
+    const result = await submitDepositRequest(pendingDeposit.transactionId, proofImage);
+    
+    if (result.success) {
+      setStatus('submitted');
+      setTimeout(() => {
+        setCurrentView('home');
+      }, 3000);
+    } else {
+      setStatus('pending');
+    }
+  };
+
+  const handleCancel = () => {
+    setCurrentView('deposit');
+  };
+
+  const copyToClipboard = (text: string) => {
+      navigator.clipboard.writeText(text).then(() => {
+          addNotification("Copied to clipboard!", "success");
+      }, () => {
+          addNotification("Failed to copy.", "error");
+      });
+  };
+
+  const { qrCode, upiId } = pendingDeposit;
+
+  const renderContent = () => {
+    switch(status) {
+      case 'processing':
+        return (
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-green-600 mx-auto"></div>
+            <p className="text-xl font-semibold text-gray-700 mt-6">Submitting Proof...</p>
+            <p className="text-gray-500">Uploading your screenshot securely.</p>
+          </div>
+        );
+      case 'submitted':
+        return (
+          <div className="text-center py-20">
+            <CheckCircle className="w-20 h-20 text-green-500 mx-auto animate-bounce" />
+            <p className="text-2xl font-bold text-gray-800 mt-6">Submitted for Review!</p>
+            <p className="text-gray-600 mt-2">The admin will verify your payment shortly.</p>
+            <p className="text-sm text-gray-500 mt-4">Redirecting you to dashboard...</p>
+          </div>
+        );
+      case 'pending':
+      default:
+        return (
+          <>
+            <div className="text-center mb-6">
+                <p className="text-sm text-gray-500">You are paying</p>
+                <p className="text-5xl font-bold text-gray-800 tracking-tight">₹{pendingDeposit.amount.toFixed(2)}</p>
+            </div>
+
+            {!qrCode && !upiId ? (
+                <div className="text-center text-red-500 p-4 bg-red-50 rounded-lg">
+                    No payment methods are currently available. Please contact support.
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {qrCode && (
+                        <div className="text-center">
+                            <h3 className="font-semibold text-gray-800 mb-2">Step 1: Pay via QR Code</h3>
+                            <div className="flex justify-center">
+                                <img src={qrCode} alt="Payment QR Code" className="w-48 h-48 object-contain border rounded-lg p-1 bg-white shadow-sm"/>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {upiId && (
+                         <div className="text-center">
+                            <h3 className="font-semibold text-gray-800 mb-2">Step 1: Pay via UPI ID</h3>
+                            <div className="bg-green-50 p-3 rounded-lg flex items-center justify-center gap-2">
+                                <p className="font-mono text-lg text-green-800 break-all">{upiId}</p>
+                                <button onClick={() => copyToClipboard(upiId)} className="p-1 text-gray-500 hover:text-green-700 flex-shrink-0"><ClipboardCopy size={18}/></button>
+                            </div>
+                         </div>
+                    )}
+
+                    <div className="border-t pt-4">
+                        <h3 className="text-center font-semibold text-gray-800 mb-4">Step 2: Upload Payment Screenshot</h3>
+                        <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                        
+                        <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition">
+                            {proofImage ? (
+                                <img src={proofImage} alt="Proof" className="max-h-48 object-contain rounded-lg" />
+                            ) : (
+                                <>
+                                    <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-2 text-gray-500">
+                                        <Upload size={24} />
+                                    </div>
+                                    <p className="text-sm font-medium text-gray-600">Click to upload screenshot</p>
+                                    <p className="text-xs text-gray-400 mt-1">JPG, PNG accepted</p>
+                                </>
+                            )}
+                        </div>
+                        {proofImage && (
+                             <p className="text-center text-xs text-green-600 mt-2 font-semibold">Screenshot selected!</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <div className="space-y-3 mt-8">
+                <button
+                    onClick={handleSubmitProof}
+                    disabled={(!qrCode && !upiId) || !proofImage}
+                    className="w-full bg-green-500 text-white py-3.5 rounded-lg font-semibold hover:bg-green-600 transition shadow-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                    Submit for Review
+                </button>
+                <button
+                    onClick={handleCancel}
+                    className="w-full text-center text-gray-600 py-2 text-sm font-medium hover:text-red-500 transition"
+                >
+                    Cancel Payment
+                </button>
+            </div>
+          </>
+        );
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <header className="flex items-center justify-center gap-3 mb-8">
+            {appLogo ? (
+                <img src={appLogo} alt="App Logo" className="w-10 h-10 rounded-full object-cover" />
+            ) : (
+                <div className="bg-green-500 w-10 h-10 rounded-full flex items-center justify-center">
+                    <TrendingUp className="text-white" size={20} />
+                </div>
+            )}
+            <h1 className="text-xl font-bold text-gray-700">{appName}</h1>
+        </header>
+
+        <main className="bg-white rounded-2xl shadow-lg p-6">
+            {renderContent()}
+        </main>
+
+        <footer className="text-center mt-6 text-gray-500 text-sm">
+            <div className="flex items-center justify-center gap-2">
+                <ShieldCheck size={16} />
+                <span>100% Secure Payments</span>
+            </div>
+        </footer>
+      </div>
+    </div>
+  );
+};
+
+export default PaymentGatewayScreen;
