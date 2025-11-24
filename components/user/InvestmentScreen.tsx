@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, Clock } from 'lucide-react';
+import { X, Clock, TrendingUp } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { InvestmentPlan, Investment } from '../../types';
 import BottomNav from './BottomNav';
@@ -57,15 +57,24 @@ const PlanCard: React.FC<{ plan: InvestmentPlan; onInvest: (plan: InvestmentPlan
 
     return (
         <div className={`bg-white rounded-xl shadow-lg overflow-hidden relative ${isExpired ? 'opacity-75 grayscale' : ''}`}>
-            {plan.imageUrl && (
+            {plan.imageUrl ? (
                 <div className="w-full h-40 relative">
                     <img src={plan.imageUrl} alt={plan.name} className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                 </div>
+            ) : (
+                <div className="w-full h-32 relative bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center">
+                    <div className="text-center text-white">
+                        <div className="bg-white/20 p-3 rounded-full inline-block mb-2 backdrop-blur-sm">
+                            <TrendingUp size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-white drop-shadow-md px-4 truncate max-w-[300px]">{plan.name}</h3>
+                    </div>
+                </div>
             )}
             
             {plan.expirationDate && !isExpired && (
-                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 z-10">
+                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 z-10 shadow-sm">
                     <Clock size={12} /> Ends in: {timeLeft}
                 </div>
             )}
@@ -77,12 +86,12 @@ const PlanCard: React.FC<{ plan: InvestmentPlan; onInvest: (plan: InvestmentPlan
 
             <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
-                        <p className="text-sm text-gray-500">{plan.category}</p>
+                    <div className="flex-1 pr-2">
+                        <h3 className="text-lg font-bold text-gray-800 leading-tight">{plan.name}</h3>
+                        <p className="text-sm text-gray-500 mt-1">{plan.category}</p>
                     </div>
                     {userInv && (
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap">
                             Qty: {userInv.quantity}
                         </span>
                     )}
@@ -111,7 +120,7 @@ const PlanCard: React.FC<{ plan: InvestmentPlan; onInvest: (plan: InvestmentPlan
                 <button 
                     onClick={() => onInvest(plan)}
                     disabled={isExpired}
-                    className={`w-full py-3 rounded-lg font-semibold transition ${isExpired ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                    className={`w-full py-3 rounded-lg font-semibold transition shadow-sm ${isExpired ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600 active:scale-95'}`}
                 >
                     {isExpired ? 'Plan Expired' : 'Invest Now'}
                 </button>
@@ -215,9 +224,13 @@ const InvestmentScreen: React.FC = () => {
       {showModal && selectedPlan && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex flex-col justify-end z-50" onClick={() => setShowModal(false)}>
               <div className="bg-white rounded-t-2xl max-h-[90vh] flex flex-col animate-slide-up" onClick={e => e.stopPropagation()}>
-                  {selectedPlan.imageUrl && (
+                  {selectedPlan.imageUrl ? (
                       <div className="w-full h-48 relative shrink-0">
                           <img src={selectedPlan.imageUrl} alt={selectedPlan.name} className="w-full h-full object-cover" />
+                      </div>
+                  ) : (
+                      <div className="w-full h-32 bg-gradient-to-r from-green-400 to-blue-500 flex items-center justify-center shrink-0">
+                          <TrendingUp size={48} className="text-white opacity-50" />
                       </div>
                   )}
                   <header className="p-4 border-b flex justify-between items-center shrink-0">

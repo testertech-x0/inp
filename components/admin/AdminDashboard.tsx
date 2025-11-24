@@ -824,13 +824,24 @@ const AdminDashboard: React.FC = () => {
                     <h3 className="font-bold mb-4">{editingPlan ? 'Edit' : 'Add'} Plan</h3>
                     <div className="mb-4">
                         <label className="text-xs text-gray-500 block mb-1">Plan Image</label>
-                        <div className="relative h-32 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group cursor-pointer">
+                        <div className="relative h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group cursor-pointer transition-colors hover:bg-gray-50 hover:border-blue-400">
                             {planForm.imageUrl ? (
-                                <img src={planForm.imageUrl} alt="Plan" className="w-full h-full object-cover" />
+                                <>
+                                    <img src={planForm.imageUrl} alt="Plan" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <div className="text-center text-white">
+                                            <ImageIcon size={24} className="mx-auto mb-1" />
+                                            <span className="text-xs font-bold">Click to Change</span>
+                                        </div>
+                                    </div>
+                                </>
                             ) : (
-                                <div className="text-center text-gray-400">
-                                    <ImageIcon size={24} className="mx-auto mb-1" />
-                                    <span className="text-xs">Click to Upload</span>
+                                <div className="text-center text-gray-400 p-4">
+                                    <div className="bg-white p-2 rounded-full inline-block shadow-sm mb-2">
+                                        <ImageIcon size={24} className="text-blue-500" />
+                                    </div>
+                                    <p className="text-xs font-medium text-gray-600">Click to Upload Image</p>
+                                    <p className="text-[10px] text-gray-400 mt-1">Supports JPG, PNG</p>
                                 </div>
                             )}
                             <input 
@@ -841,26 +852,37 @@ const AdminDashboard: React.FC = () => {
                                     const f = e.target.files?.[0]; 
                                     if (f) { 
                                         const r = new FileReader(); 
-                                        r.onload = ev => setPlanForm({...planForm, imageUrl: ev.target?.result as string}); 
+                                        r.onload = ev => {
+                                            setPlanForm(prev => ({...prev, imageUrl: ev.target?.result as string}));
+                                        }; 
                                         r.readAsDataURL(f); 
-                                    } 
+                                    }
+                                    // Reset input value so same file can be selected again if needed
+                                    e.target.value = '';
                                 }} 
                             />
-                            {planForm.imageUrl && (
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <span className="text-white text-xs font-bold">Change</span>
-                                </div>
-                            )}
                         </div>
-                        {planForm.imageUrl && <button onClick={() => setPlanForm({...planForm, imageUrl: ''})} className="text-xs text-red-500 mt-1 hover:underline">Remove Image</button>}
+                        {planForm.imageUrl && (
+                            <button 
+                                onClick={() => setPlanForm(prev => ({...prev, imageUrl: ''}))} 
+                                className="text-xs text-red-500 mt-2 flex items-center gap-1 hover:underline ml-1"
+                            >
+                                <Trash2 size={12} /> Remove Image
+                            </button>
+                        )}
                     </div>
-                    <input className="w-full border p-2 rounded mb-2" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} placeholder="Plan Name" />
-                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} placeholder="Min Investment" />
-                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} placeholder="Daily Return" />
-                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} placeholder="Duration (Days)" />
-                    <input className="w-full border p-2 rounded mb-2" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} placeholder="Category (e.g. VIP)" />
-                    <div className="mb-4"><label className="text-xs text-gray-500">Expiration (Optional)</label><input className="w-full border p-2 rounded" type="datetime-local" value={planForm.expirationDate} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} /></div>
-                    <div className="flex justify-end gap-2"><button onClick={() => setShowPlanModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handlePlanSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div>
+                    <div className="space-y-3">
+                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} placeholder="Plan Name" />
+                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} placeholder="Min Investment" />
+                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} placeholder="Daily Return" />
+                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} placeholder="Duration (Days)" />
+                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} placeholder="Category (e.g. VIP)" />
+                        <div><label className="text-xs text-gray-500 block mb-1">Expiration (Optional)</label><input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="datetime-local" value={planForm.expirationDate} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} /></div>
+                    </div>
+                    <div className="flex justify-end gap-2 mt-6 border-t pt-4">
+                        <button onClick={() => setShowPlanModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 font-medium">Cancel</button>
+                        <button onClick={handlePlanSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Save Plan</button>
+                    </div>
                 </div>
             </div>}
             
