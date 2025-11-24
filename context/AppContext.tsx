@@ -103,11 +103,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initializeApp();
  }, []);
 
-  const addNotification = (message: string, type: NotificationType = 'info') => {
+  const addNotification = (message: string, type: NotificationType = 'info', duration: number = 4000) => {
     const id = Date.now();
-    setNotifications(prev => [...prev, { id, message, type }]);
-    setTimeout(() => { setNotifications(prev => prev.filter(n => n.id !== id)); }, 3000);
+    // Limit queue to 3 most recent
+    setNotifications(prev => {
+        const newNote = { id, message, type, duration };
+        const updated = [...prev, newNote];
+        if (updated.length > 3) return updated.slice(updated.length - 3);
+        return updated;
+    });
   };
+
+  const removeNotification = (id: number) => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+  };
+
   const showConfirmation = (title: string, message: string | ReactNode, onConfirm: () => void) => { setConfirmation({ isOpen: true, title, message, onConfirm }); };
   const hideConfirmation = () => { setConfirmation({ isOpen: false, title: '', message: '', onConfirm: () => {} }); };
   const handleConfirm = () => { confirmation.onConfirm(); hideConfirmation(); };
@@ -161,7 +171,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const value: AppContextType = {
     users, currentUser, admin, investmentPlans, currentView, loginAsUser, appName, appLogo, themeColor, isLoading, comments, chatSessions, socialLinks, luckyDrawPrizes, luckyDrawWinningPrizeIds, paymentSettings, activityLog, pendingDeposit: pendingPaymentDetails, financialRequests, financialHistory, systemNotice,
-    setCurrentView, register, login, adminLogin, logout, adminLogout, loginAsUserFunc, returnToAdmin, updateUser, deleteUser, investInPlan, maskPhone, addNotification, showConfirmation, fetchAllUsers,
+    setCurrentView, register, login, adminLogin, logout, adminLogout, loginAsUserFunc, returnToAdmin, updateUser, deleteUser, investInPlan, maskPhone, addNotification, removeNotification, showConfirmation, fetchAllUsers,
     makeWithdrawal: (userId, amount, fundPassword) => makeWithdrawal(userId, amount, fundPassword),
     changeUserPassword: (id, o, n) => api.changeUserPassword(id, o, n).then(r => { addNotification('Password changed', 'success'); return r; }).catch(e => { addNotification(e.message, 'error'); return { success: false, message: e.message }; }),
     addInvestmentPlan: (p) => api.addInvestmentPlan(p).then(r => { setInvestmentPlans(prev => [...prev, r]); addNotification('Plan added', 'success'); return { success: true }; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; }),

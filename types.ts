@@ -80,12 +80,13 @@ export interface Admin {
   isLoggedIn: boolean;
 }
 
-export type NotificationType = 'success' | 'error' | 'info';
+export type NotificationType = 'success' | 'error' | 'info' | 'warning';
 
 export interface Notification {
   id: number;
   message: string;
   type: NotificationType;
+  duration?: number;
 }
 
 export interface ConfirmationState {
@@ -213,7 +214,10 @@ export interface AppContextType {
   deleteUser: (userId: string) => Promise<void>;
   investInPlan: (planId: string, quantity: number) => Promise<{ success: boolean; message: string }>;
   maskPhone: (phone: string) => string;
-  addNotification: (message: string, type?: NotificationType) => void;
+  
+  addNotification: (message: string, type?: NotificationType, duration?: number) => void;
+  removeNotification: (id: number) => void;
+  
   showConfirmation: (title: string, message: string | ReactNode, onConfirm: () => void) => void;
   dismissSms: (id: number) => void;
   
