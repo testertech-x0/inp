@@ -31,6 +31,7 @@ import TeamScreen from './components/user/TeamScreen';
 import DownloadAppScreen from './components/user/DownloadAppScreen';
 import Notifications from './components/ui/Notifications';
 import ConfirmationModal from './components/ui/ConfirmationModal';
+import UninstalledView from './components/ui/UninstalledView'; // Import the new view
 
 const themeHexMap: Record<ThemeColor, Record<number, string>> = {
   green: { 50: '#f0fdf4', 100: '#dcfce7', 500: '#22c55e', 600: '#16a34a', 700: '#15803d' },
@@ -100,6 +101,14 @@ function AppContent() {
         </div>
       </div>
     );
+  }
+
+  // Check for "Uninstalled" State
+  // If a user is technically logged in (currentUser exists) BUT they are flagged as uninstalled (e.g. via concurrent session check),
+  // we force them to the uninstalled view.
+  // Note: Ideally, the 'login' API prevents entry, but if they were already on the page, this handles the realtime switch.
+  if (currentView === 'uninstalled') {
+      return <UninstalledView />;
   }
 
   let viewComponent;

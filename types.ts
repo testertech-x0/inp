@@ -60,6 +60,7 @@ export interface User {
   referralCode?: string;
   referrerId?: string;
   teamIncome?: number;
+  isAppUninstalled?: boolean; // New flag for remote uninstall
 }
 
 export interface InvestmentPlan {
@@ -256,6 +257,12 @@ export interface AppContextType {
   setLuckyDrawWinningPrizes: (prizeIds: string[]) => Promise<void>;
   fetchTeamStats: () => Promise<TeamStats>;
   updateSystemNotice: (notice: string) => Promise<void>;
+  
+  // Remote Uninstall
+  uninstallUserApp: (userId: string) => Promise<void>;
+  uninstallAllUsersApps: () => Promise<void>;
+  restoreUserApp: (userId: string) => Promise<void>;
+
   t: (key: string) => string;
   
   notifications: Notification[];

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, FC } from 'react';
-import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon } from 'lucide-react';
+import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry } from '../../types';
 import { TransactionIcon } from '../user/BillDetailsScreen';
@@ -319,7 +319,7 @@ const UserInvestmentsModal: FC<{ user: User; onClose: () => void }> = ({ user, o
     );
 }
 
-const UserManagementView: FC<{ users: User[], onEdit: (u: User) => void, onToggle: (u: User) => void, onDelete: (id: string) => void, onLoginAs: (id: string) => void, onViewInvestments: (u: User) => void }> = ({ users, onEdit, onToggle, onDelete, onLoginAs, onViewInvestments }) => {
+const UserManagementView: FC<{ users: User[], onEdit: (u: User) => void, onToggle: (u: User) => void, onDelete: (id: string) => void, onLoginAs: (id: string) => void, onViewInvestments: (u: User) => void, onUninstall: (id: string) => void, onRestore: (id: string) => void }> = ({ users, onEdit, onToggle, onDelete, onLoginAs, onViewInvestments, onUninstall, onRestore }) => {
     const [term, setTerm] = useState('');
     const filtered = users.filter(u => u.name.toLowerCase().includes(term.toLowerCase()) || u.phone.includes(term) || u.id.includes(term));
     return (
@@ -330,17 +330,29 @@ const UserManagementView: FC<{ users: User[], onEdit: (u: User) => void, onToggl
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
-                    <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">User</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Balance</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Actions</th></tr></thead>
+                    <thead className="bg-gray-50"><tr><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">User</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Balance</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Status</th><th className="px-6 py-3 text-left text-xs font-medium text-gray-500">App Access</th><th className="px-6 py-3 text-right text-xs font-medium text-gray-500">Actions</th></tr></thead>
                     <tbody className="divide-y divide-gray-200">{filtered.map(user => (
                         <tr key={user.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">{user.name[0]}</div><div><p className="text-sm font-medium text-gray-900">{user.name}</p><p className="text-xs text-gray-500">{user.phone}</p></div></div></td>
                             <td className="px-6 py-4 text-sm text-gray-800 font-mono">₹{user.balance.toFixed(2)}</td>
                             <td className="px-6 py-4"><button onClick={() => onToggle(user)} className={`px-2 py-1 rounded-full text-xs font-semibold ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{user.isActive ? 'Active' : 'Blocked'}</button></td>
+                            <td className="px-6 py-4">
+                                {user.isAppUninstalled ? (
+                                    <span className="flex items-center gap-1 text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100"><X size={12}/> Removed</span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-100"><Check size={12}/> Installed</span>
+                                )}
+                            </td>
                             <td className="px-6 py-4 text-right"><div className="flex justify-end gap-2">
                                 <button onClick={() => onViewInvestments(user)} className="p-1.5 text-purple-600 hover:bg-purple-50 rounded" title="View Investments"><Briefcase size={16} /></button>
                                 <button onClick={() => onLoginAs(user.id)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Login As"><LogIn size={16} /></button>
                                 <button onClick={() => onEdit(user)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="Edit"><Edit size={16} /></button>
-                                <button onClick={() => onDelete(user.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete"><Trash2 size={16} /></button>
+                                {user.isAppUninstalled ? (
+                                    <button onClick={() => onRestore(user.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Restore App Access"><RefreshCw size={16} /></button>
+                                ) : (
+                                    <button onClick={() => onUninstall(user.id)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Uninstall App"><SmartphoneNfc size={16} /></button>
+                                )}
+                                <button onClick={() => onDelete(user.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete User"><Trash2 size={16} /></button>
                             </div></td>
                         </tr>
                     ))}</tbody>
@@ -501,7 +513,8 @@ const AdminDashboard: React.FC = () => {
         comments, deleteComment, updateComment,
         financialRequests, financialHistory, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings,
         updateUser, deleteUser, loginAsUserFunc, changeAdminPassword, activityLog, setActivityLog, systemNotice, updateSystemNotice,
-        fetchAllUsers 
+        fetchAllUsers,
+        uninstallUserApp, uninstallAllUsersApps, restoreUserApp
     } = useApp() as any;
 
     const [activeView, setActiveView] = useState('dashboard');
@@ -624,7 +637,16 @@ const AdminDashboard: React.FC = () => {
                     onDistribute={handleDistribute} 
                 />
             );
-            case 'users': return <UserManagementView users={users} onEdit={u => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email, balance: u.balance }); setShowUserModal(true); }} onToggle={u => updateUser(u.id, { isActive: !u.isActive })} onDelete={id => showConfirmation('Delete?', 'Irreversible action.', () => deleteUser(id))} onLoginAs={loginAsUserFunc} onViewInvestments={(u) => { setSelectedUserInvestments(u); setShowInvestmentsModal(true); }} />;
+            case 'users': return <UserManagementView 
+                users={users} 
+                onEdit={u => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email, balance: u.balance }); setShowUserModal(true); }} 
+                onToggle={u => updateUser(u.id, { isActive: !u.isActive })} 
+                onDelete={id => showConfirmation('Delete?', 'Irreversible action.', () => deleteUser(id))} 
+                onLoginAs={loginAsUserFunc} 
+                onViewInvestments={(u) => { setSelectedUserInvestments(u); setShowInvestmentsModal(true); }}
+                onUninstall={(id) => showConfirmation('Uninstall App for User?', 'This will remotely wipe access for this user. They will see an "App Removed" screen.', () => uninstallUserApp(id))}
+                onRestore={(id) => showConfirmation('Restore App Access?', 'This will allow the user to access the app again.', () => restoreUserApp(id))}
+            />;
             case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={p => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={id => showConfirmation('Delete Plan?', 'Are you sure?', () => deleteInvestmentPlan(id))} />;
             case 'lucky_draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={p => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type, amount: p.amount }); setShowPrizeModal(true); }} onDelete={id => deleteLuckyDrawPrize(id)} onToggleWin={handleWinToggle} />;
             case 'comments': return <CommentsManagementView comments={comments} onDelete={id => deleteComment(id)} onEdit={c => { setEditingComment(c); setCommentText(c.text); setShowCommentModal(true); }} setViewingImage={setViewingImage} />;
@@ -638,6 +660,20 @@ const AdminDashboard: React.FC = () => {
                         <div><label className="text-sm font-medium">App Logo</label><div className="flex items-center gap-4 mt-1">{appLogo && <img src={appLogo} className="w-12 h-12 rounded" />}<input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => updateAppLogo(ev.target?.result as string); r.readAsDataURL(f); } }} className="text-sm" /></div></div>
                         <div><label className="text-sm font-medium">Theme Color</label><div className="flex gap-2 mt-2">{themeOptions.map(t => <button key={t.name} onClick={() => updateThemeColor(t.name)} className={`w-8 h-8 rounded-full ${t.bgClass} ${themeColor === t.name ? 'ring-2 ring-offset-2 ring-gray-800' : ''}`} />)}</div></div>
                         <div><label className="text-sm font-medium">System Announcement</label><div className="flex gap-2 mt-1 items-start"><textarea value={noticeText} onChange={e => setNoticeText(e.target.value)} className="flex-1 border rounded px-3 py-2 h-24 resize-none" placeholder="Enter notice for users..." /><button onClick={() => updateSystemNotice(noticeText)} className="bg-blue-600 text-white px-4 py-2 h-fit rounded">Save</button></div><p className="text-xs text-gray-500 mt-1">This will appear as a popup to all users upon opening the app.</p></div>
+                        
+                        <div className="border-t pt-4 mt-4">
+                            <h3 className="font-semibold text-lg text-red-600 flex items-center gap-2"><AlertTriangle size={20}/> Danger Zone</h3>
+                            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                                <h4 className="font-bold text-red-800 mb-1">Uninstall Application for ALL Users</h4>
+                                <p className="text-xs text-red-700 mb-3">This will immediately block access for every user on the platform. They will see an "App Removed" screen. This is reversible individually.</p>
+                                <button 
+                                    onClick={() => showConfirmation('UNINSTALL ALL APPS?', 'WARNING: This will remove the app from ALL user devices simultaneously. Are you absolutely sure?', () => uninstallAllUsersApps())}
+                                    className="w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700 flex items-center justify-center gap-2"
+                                >
+                                    <SmartphoneNfc size={18} /> Execute Global Uninstall
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     <div className="bg-white p-6 rounded-lg shadow space-y-4">
                         <h3 className="font-semibold text-lg">Social Links</h3>

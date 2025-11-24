@@ -75,11 +75,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     // Mock User Login Persist
                     const user = await api.fetchUserProfile();
                     if (user) {
-                        setCurrentUser(user);
-                        setCurrentView('home');
+                        // Check if flagged as uninstalled
+                        if (user.isAppUninstalled) {
+                            handleLogout();
+                            setCurrentView('uninstalled');
+                        } else {
+                            setCurrentUser(user);
+                            setCurrentView('home');
+                        }
                     } else {
-                        // Token invalid
+                        // Token invalid or user not found (might be uninstalled via API returning null)
                          localStorage.removeItem('authToken');
+                         // Check if it was an uninstall that returned null
                          setCurrentView(isAdminUrl ? 'admin-login' : 'login');
                     }
                 }
@@ -115,7 +122,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       localStorage.removeItem('userType'); 
       localStorage.removeItem('loginAsUser'); 
       localStorage.removeItem('mock_active_user_id'); 
-      sessionStorage.removeItem('has_seen_notice'); // Clear notice flag
+      sessionStorage.removeItem('has_seen_notice'); 
       setCurrentUser(null); 
       setLoginAsUser(null); 
       setAdmin(prev => ({ ...prev, isLoggedIn: false })); 
@@ -127,11 +134,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const fetchAllUsers = async () => { try { const allUsers = await api.fetchAllUsers(); setUsers(allUsers); } catch (e: any) { console.error("Failed to fetch users", e); } };
 
-  const updateUser = async (userId: string, updates: Partial<User>) => { try { const updatedUser = await api.updateAdminUser(userId, updates); if (currentUser?.id === userId) setCurrentUser(updatedUser); if (loginAsUser?.id === userId) setLoginAsUser(updatedUser); fetchAllUsers(); /* Refresh list */ } catch (error: any) { addNotification(error.message, 'error'); } };
+  const updateUser = async (userId: string, updates: Partial<User>) => { try { const updatedUser = await api.updateAdminUser(userId, updates); if (currentUser?.id === userId) setCurrentUser(updatedUser); if (loginAsUser?.id === userId) setLoginAsUser(updatedUser); fetchAllUsers(); } catch (error: any) { addNotification(error.message, 'error'); } };
   const deleteUser = async (userId: string) => { try { await api.deleteAdminUser(userId); setUsers(prev => prev.filter(u => u.id !== userId)); addNotification(`User ${userId} deleted.`, 'success'); } catch (error: any) { addNotification(error.message, 'error'); } };
   const investInPlan = async (planId: string, quantity: number) => { if (!currentUser) return { success: false, message: 'Not logged in' }; try { const { user: updatedUser } = await api.investInPlan(planId, quantity); setCurrentUser(updatedUser); addNotification('Investment successful!', 'success'); return { success: true, message: 'Investment successful!' }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false, message: error.message }; } };
   
-  const initiateDeposit = async (amount: number) => { try { const { paymentDetails } = await api.initiateDeposit(amount); setPendingPaymentDetails(paymentDetails); } catch (error: any) { addNotification(error.message, 'error'); } };
+  const initiateDeposit = async (amount: number, methodId?: string) => { try { const { paymentDetails } = await api.initiateDeposit(amount, methodId); setPendingPaymentDetails(paymentDetails); } catch (error: any) { addNotification(error.message, 'error'); } };
   const submitDepositRequest = async (transactionId: string, proofImg: string) => { try { const amount = pendingPaymentDetails?.amount || 0; await api.submitDepositRequest(transactionId, proofImg, amount); setPendingPaymentDetails(null); addNotification('Deposit submitted for review', 'success'); return { success: true }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false }; } };
   
   const makeWithdrawal = async (userId: string, amount: number, fundPassword: string) => { try { const { user: updatedUser } = await api.makeWithdrawal(userId, amount, fundPassword); setCurrentUser(updatedUser); addNotification(`Withdrawal request submitted.`, 'success'); return { success: true }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false, message: error.message }; } };
@@ -144,6 +151,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const fetchTeamStats = async () => { return await api.fetchTeamStats(); };
   const updateSystemNotice = async (notice: string) => { await api.updateAdminPlatformSettings({ systemNotice: notice }); setSystemNotice(notice); addNotification('System Notice Updated', 'success'); };
+  
+  // Remote Uninstall wrappers
+  const uninstallUserApp = async (userId: string) => { await api.uninstallUserApp(userId); fetchAllUsers(); addNotification(`App remotely removed for user ${userId}`, 'info'); };
+  const restoreUserApp = async (userId: string) => { await api.restoreUserApp(userId); fetchAllUsers(); addNotification(`App access restored for user ${userId}`, 'success'); };
+  const uninstallAllUsersApps = async () => { await api.uninstallAllUsersApps(); fetchAllUsers(); addNotification('All apps remotely removed.', 'error'); };
+
   const t = (key: string) => { const lang = currentUser?.language || 'en'; const dict = translations[lang] || translations['en']; return dict[key] || translations['en'][key] || key; };
 
   const value: AppContextType = {
@@ -176,6 +189,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteLuckyDrawPrize: (id) => api.deleteLuckyDrawPrize(id).then(() => { setLuckyDrawPrizes(prev => prev.filter(p => p.id !== id)); addNotification('Prize deleted', 'success'); }).catch(e => addNotification(e.message, 'error')),
     setLuckyDrawWinningPrizes: (ids) => api.setLuckyDrawWinningPrizes(ids).then(() => { setLuckyDrawWinningPrizeIds(ids); addNotification('Force Win updated', 'success'); }).catch(e => addNotification(e.message, 'error')),
     initiateDeposit, submitDepositRequest, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings, dismissSms: () => {}, mockSms: [], t, fetchTeamStats, updateSystemNotice,
+    uninstallUserApp, uninstallAllUsersApps, restoreUserApp,
     notifications, confirmation, hideConfirmation, handleConfirm, setUsers, setActivityLog, setInvestmentPlans, setComments, setChatSessions
   };
 

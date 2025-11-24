@@ -62,6 +62,7 @@ export const register = async (data: { name: string; phone: string; password: st
         withdrawals: 0,
         registrationDate: new Date().toISOString(),
         isActive: true,
+        isAppUninstalled: false,
         investments: [],
         transactions: [{
             id: Date.now().toString(),
@@ -103,6 +104,10 @@ export const login = async (identifier: string, password: string) => {
         throw new Error("Invalid credentials");
     }
 
+    if (user.isAppUninstalled) {
+        throw new Error("Application has been removed from this account.");
+    }
+
     if (!user.isActive) throw new Error("Account is blocked");
 
     user.loginActivity.push({ date: new Date().toISOString(), device: 'Web Browser' });
@@ -128,7 +133,11 @@ export const fetchUserProfile = async () => {
     const activeId = localStorage.getItem('mock_active_user_id');
     if (activeId) {
         const user = users.find(u => u.id === activeId);
-        if (user) return user;
+        // Check if uninstalled remotely while session was active
+        if (user) {
+            if (user.isAppUninstalled) return null; // Will trigger logout in context
+            return user;
+        }
     }
     return users[0]; // Fallback
 };
@@ -169,6 +178,38 @@ export const deleteAdminUser = async (userId: string) => {
     let users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
     users = users.filter(u => u.id !== userId);
     setStorage(STORAGE_KEYS.USERS, users);
+};
+
+// --- REMOTE UNINSTALL ---
+
+export const uninstallUserApp = async (userId: string) => {
+    await delay();
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
+    const index = users.findIndex(u => u.id === userId);
+    if (index !== -1) {
+        users[index].isAppUninstalled = true;
+        setStorage(STORAGE_KEYS.USERS, users);
+        await logActivity(userId, users[index].name, 'App Remotely Uninstalled');
+    }
+};
+
+export const restoreUserApp = async (userId: string) => {
+    await delay();
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
+    const index = users.findIndex(u => u.id === userId);
+    if (index !== -1) {
+        users[index].isAppUninstalled = false;
+        setStorage(STORAGE_KEYS.USERS, users);
+        await logActivity(userId, users[index].name, 'App Access Restored');
+    }
+};
+
+export const uninstallAllUsersApps = async () => {
+    await delay();
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
+    users.forEach(u => u.isAppUninstalled = true);
+    setStorage(STORAGE_KEYS.USERS, users);
+    await logActivity('ALL', 'System', 'Global App Uninstall Executed');
 };
 
 // --- INVESTMENTS ---
