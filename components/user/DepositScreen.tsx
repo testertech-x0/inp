@@ -1,10 +1,10 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const DepositScreen: React.FC = () => {
   const { currentUser, setCurrentView, addNotification, initiateDeposit, paymentSettings } = useApp();
-  const [activeTab, setActiveTab] = useState('CASH');
   const [amount, setAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -37,25 +37,7 @@ const DepositScreen: React.FC = () => {
         <h1 className="flex-1 text-center text-lg font-semibold text-gray-800 pr-6">Deposit</h1>
       </header>
 
-      <div className="bg-white">
-        <div className="flex justify-around border-b">
-          <button 
-            onClick={() => setActiveTab('CASH')}
-            className={`w-1/2 py-3 font-semibold transition-all duration-200 ${activeTab === 'CASH' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-          >
-            CASH ACCOUNT
-          </button>
-          <button 
-            onClick={() => setActiveTab('USDT')}
-            className={`w-1/2 py-3 font-semibold transition-all duration-200 ${activeTab === 'USDT' ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-500'}`}
-          >
-            USDT ACCOUNT
-          </button>
-        </div>
-      </div>
-
       <main className="p-4">
-        {activeTab === 'CASH' ? (
           <div className="bg-white p-4 rounded-lg shadow">
             <div className="mb-6">
               <p className="text-sm text-green-600">Account balance</p>
@@ -95,16 +77,11 @@ const DepositScreen: React.FC = () => {
               {isProcessing ? 'Initiating...' : 'Proceed to Pay'}
             </button>
           </div>
-        ) : (
-          <div className="text-center text-gray-500 py-10 bg-white p-4 rounded-lg shadow">
-            USDT Deposit is currently unavailable.
-          </div>
-        )}
       </main>
       
       <footer className="px-4 pb-4">
         <div className="text-xs text-gray-500 mt-6 space-y-2 p-4 bg-white rounded-lg shadow">
-            <p>1. The minimum recharge amount is <span className="font-bold text-red-500">₹200</span>, and the minimum recharge amount for TRC-20 cryptocurrency is <span className="font-bold text-red-500">10 USDT</span>.</p>
+            <p>1. The minimum recharge amount is <span className="font-bold text-red-500">₹200</span>.</p>
             <p>2. Please ensure that the payment amount matches the amount you entered. To ensure a smooth recharge, you must fill out and submit the recharge order according to the process each time. Do not make a direct payment to the receiving account without submitting an order.</p>
             <p>3. If the funds do not arrive within 5 minutes after payment, please contact the platform's customer service for assistance.</p>
         </div>

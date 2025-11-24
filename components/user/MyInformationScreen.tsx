@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, User as UserIcon, Mail, Camera } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, Camera } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User } from '../../types';
 
@@ -8,14 +8,12 @@ const MyInformationScreen: React.FC = () => {
     const { currentUser, setCurrentView, updateUser, addNotification } = useApp();
 
     const [name, setName] = useState(currentUser?.name || '');
-    const [email, setEmail] = useState(currentUser?.email || '');
     const [avatarPreview, setAvatarPreview] = useState<string | null>(currentUser?.avatar || null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         if (currentUser) {
             setName(currentUser.name);
-            setEmail(currentUser.email);
             setAvatarPreview(currentUser.avatar || null);
         }
     }, [currentUser]);
@@ -39,7 +37,7 @@ const MyInformationScreen: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const updates: Partial<Pick<User, 'name' | 'email' | 'avatar'>> = { name, email };
+        const updates: Partial<Pick<User, 'name' | 'avatar'>> = { name };
         if (avatarPreview && avatarPreview !== currentUser.avatar) {
             updates.avatar = avatarPreview;
         }
@@ -91,20 +89,6 @@ const MyInformationScreen: React.FC = () => {
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
                                     placeholder="Please enter username..."
-                                    className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-transparent rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">E-mail</label>
-                            <div className="relative">
-                                <Mail size={20} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="Please enter email..."
                                     className="w-full pl-10 pr-4 py-3 bg-gray-100 border border-transparent rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition"
                                 />
                             </div>
