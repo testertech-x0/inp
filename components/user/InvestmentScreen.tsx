@@ -56,57 +56,66 @@ const PlanCard: React.FC<{ plan: InvestmentPlan; onInvest: (plan: InvestmentPlan
     const { timeLeft, isExpired } = useCountdown(plan.expirationDate);
 
     return (
-        <div className={`bg-white rounded-xl shadow-lg p-6 relative ${isExpired ? 'opacity-75 grayscale' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-lg overflow-hidden relative ${isExpired ? 'opacity-75 grayscale' : ''}`}>
+            {plan.imageUrl && (
+                <div className="w-full h-40 relative">
+                    <img src={plan.imageUrl} alt={plan.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                </div>
+            )}
+            
             {plan.expirationDate && !isExpired && (
-                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl flex items-center gap-1">
+                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 z-10">
                     <Clock size={12} /> Ends in: {timeLeft}
                 </div>
             )}
             {isExpired && (
-                <div className="absolute top-0 right-0 bg-gray-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">
+                <div className="absolute top-0 right-0 bg-gray-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl z-10">
                     Expired
                 </div>
             )}
 
-            <div className="flex justify-between items-start mb-4 mt-2">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
-                    <p className="text-sm text-gray-500">{plan.category}</p>
+            <div className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800">{plan.name}</h3>
+                        <p className="text-sm text-gray-500">{plan.category}</p>
+                    </div>
+                    {userInv && (
+                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                            Qty: {userInv.quantity}
+                        </span>
+                    )}
                 </div>
-                {userInv && (
-                    <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
-                        Qty: {userInv.quantity}
-                    </span>
-                )}
+
+                <div className="grid grid-cols-2 gap-4 mb-4 text-center border-t border-b py-4">
+                    <div>
+                        <p className="text-xs text-gray-500">Investment</p>
+                        <p className="text-lg font-bold text-gray-800">₹{userInv?.investedAmount || plan.minInvestment}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500">Total Revenue</p>
+                        <p className="text-lg font-bold text-green-600">₹{userInv?.totalRevenue || (plan.dailyReturn * plan.duration)}</p>
+
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500">Daily Earnings</p>
+                        <p className="text-lg font-bold text-blue-600">₹{userInv?.dailyEarnings || plan.dailyReturn}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs text-gray-500">Revenue Days</p>
+                        <p className="text-lg font-bold text-purple-600">{plan.duration} Days</p>
+                    </div>
+                </div>
+
+                <button 
+                    onClick={() => onInvest(plan)}
+                    disabled={isExpired}
+                    className={`w-full py-3 rounded-lg font-semibold transition ${isExpired ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                >
+                    {isExpired ? 'Plan Expired' : 'Invest Now'}
+                </button>
             </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4 text-center border-t border-b py-4">
-                <div>
-                    <p className="text-xs text-gray-500">Investment</p>
-                    <p className="text-lg font-bold text-gray-800">₹{userInv?.investedAmount || plan.minInvestment}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500">Total Revenue</p>
-                    <p className="text-lg font-bold text-green-600">₹{userInv?.totalRevenue || (plan.dailyReturn * plan.duration)}</p>
-
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500">Daily Earnings</p>
-                    <p className="text-lg font-bold text-blue-600">₹{userInv?.dailyEarnings || plan.dailyReturn}</p>
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500">Revenue Days</p>
-                    <p className="text-lg font-bold text-purple-600">{plan.duration} Days</p>
-                </div>
-            </div>
-
-            <button 
-                onClick={() => onInvest(plan)}
-                disabled={isExpired}
-                className={`w-full py-3 rounded-lg font-semibold transition ${isExpired ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-500 text-white hover:bg-green-600'}`}
-            >
-                {isExpired ? 'Plan Expired' : 'Invest Now'}
-            </button>
         </div>
     );
 };
@@ -206,6 +215,11 @@ const InvestmentScreen: React.FC = () => {
       {showModal && selectedPlan && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex flex-col justify-end z-50" onClick={() => setShowModal(false)}>
               <div className="bg-white rounded-t-2xl max-h-[90vh] flex flex-col animate-slide-up" onClick={e => e.stopPropagation()}>
+                  {selectedPlan.imageUrl && (
+                      <div className="w-full h-48 relative shrink-0">
+                          <img src={selectedPlan.imageUrl} alt={selectedPlan.name} className="w-full h-full object-cover" />
+                      </div>
+                  )}
                   <header className="p-4 border-b flex justify-between items-center shrink-0">
                       <h2 className="text-lg font-bold text-gray-800">{selectedPlan.name}</h2>
                       <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-700">

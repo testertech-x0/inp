@@ -15,10 +15,10 @@ const STORAGE_KEYS = {
 
 // Initial Data
 const INITIAL_PLANS: InvestmentPlan[] = [
-    { id: '1', name: 'Starter Plan', minInvestment: 500, dailyReturn: 35, duration: 20, category: 'VIP 1' }, // Updated example plan
-    { id: '2', name: 'Growth Plan', minInvestment: 2000, dailyReturn: 100, duration: 45, category: 'VIP 2' },
-    { id: '3', name: 'Premium Plan', minInvestment: 5000, dailyReturn: 300, duration: 60, category: 'VIP 3' },
-    { id: '4', name: 'Short Term', minInvestment: 1000, dailyReturn: 40, duration: 7, category: 'Welfare', expirationDate: new Date(Date.now() + 86400000 * 7).toISOString() }
+    { id: '1', name: 'Starter Plan', imageUrl: 'https://images.unsplash.com/photo-1611974765270-ca12586343bb?auto=format&fit=crop&q=80&w=400', minInvestment: 500, dailyReturn: 35, duration: 20, category: 'VIP 1' },
+    { id: '2', name: 'Growth Plan', imageUrl: 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?auto=format&fit=crop&q=80&w=400', minInvestment: 2000, dailyReturn: 100, duration: 45, category: 'VIP 2' },
+    { id: '3', name: 'Premium Plan', imageUrl: 'https://images.unsplash.com/photo-1633158829585-23ba8f7c8caf?auto=format&fit=crop&q=80&w=400', minInvestment: 5000, dailyReturn: 300, duration: 60, category: 'VIP 3' },
+    { id: '4', name: 'Short Term', imageUrl: 'https://images.unsplash.com/photo-1620714223084-87bd6c26e5bb?auto=format&fit=crop&q=80&w=400', minInvestment: 1000, dailyReturn: 40, duration: 7, category: 'Welfare', expirationDate: new Date(Date.now() + 86400000 * 7).toISOString() }
 ];
 
 const INITIAL_PRIZES: Prize[] = [
@@ -254,16 +254,19 @@ export const investInPlan = async (planId: string, quantity: number) => {
 
 // --- FINANCIALS ---
 
-export const initiateDeposit = async (amount: number) => {
+export const initiateDeposit = async (amount: number, methodId?: string) => {
     await delay();
     const settings = await fetchPlatformSettings();
     
-    // Get all active methods
     const activeMethods = settings.paymentSettings.paymentMethods.filter((m: any) => m.isActive);
-    
     let method;
-    if (activeMethods.length > 0) {
-        // Randomly select one active method
+
+    if (methodId) {
+        method = activeMethods.find((m: any) => m.id === methodId);
+    }
+
+    if (!method && activeMethods.length > 0) {
+        // Randomly select one active method if none selected or selected one not found
         const randomIndex = Math.floor(Math.random() * activeMethods.length);
         method = activeMethods[randomIndex];
     }
@@ -810,4 +813,3 @@ export const fetchAdminDashboard = async () => {
         platformBalance 
     };
 };
-    

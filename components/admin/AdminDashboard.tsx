@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, FC } from 'react';
-import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark } from 'lucide-react';
+import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry } from '../../types';
 import { TransactionIcon } from '../user/BillDetailsScreen';
@@ -355,7 +355,12 @@ const PlanManagementView: FC<{ plans: InvestmentPlan[], onAdd: () => void, onEdi
         <div className="p-6 border-b flex justify-between items-center"><h2 className="text-xl font-semibold text-gray-800">Investment Plans</h2><button onClick={onAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"><Plus size={18} /> Add Plan</button></div>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
             {plans.map(plan => (
-                <div key={plan.id} className="border rounded-xl p-5 hover:shadow-md transition">
+                <div key={plan.id} className="border rounded-xl p-5 hover:shadow-md transition bg-white overflow-hidden">
+                    {plan.imageUrl && (
+                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden border bg-gray-50">
+                            <img src={plan.imageUrl} alt={plan.name} className="w-full h-full object-cover" />
+                        </div>
+                    )}
                     <div className="flex justify-between items-start mb-4">
                         <div><h3 className="font-bold text-lg text-gray-800">{plan.name}</h3><span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{plan.category}</span></div>
                         <div className="flex gap-1"><button onClick={() => onEdit(plan)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit size={16} /></button><button onClick={() => onDelete(plan.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button></div>
@@ -496,7 +501,7 @@ const AdminDashboard: React.FC = () => {
         comments, deleteComment, updateComment,
         financialRequests, financialHistory, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings,
         updateUser, deleteUser, loginAsUserFunc, changeAdminPassword, activityLog, setActivityLog, systemNotice, updateSystemNotice,
-        fetchAllUsers // Added fetchAllUsers
+        fetchAllUsers 
     } = useApp() as any;
 
     const [activeView, setActiveView] = useState('dashboard');
@@ -510,7 +515,7 @@ const AdminDashboard: React.FC = () => {
 
     const [showPlanModal, setShowPlanModal] = useState(false);
     const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
-    const [planForm, setPlanForm] = useState({ name: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' });
+    const [planForm, setPlanForm] = useState({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' });
 
     const [showPrizeModal, setShowPrizeModal] = useState(false);
     const [editingPrize, setEditingPrize] = useState<Prize | null>(null);
@@ -532,10 +537,10 @@ const AdminDashboard: React.FC = () => {
         if (activeView === 'financial') {
             fetchFinancialRequests();
             fetchFinancialHistory();
-            fetchAllUsers(); // Need users to show bank details
+            fetchAllUsers(); 
         }
         if (activeView === 'logs') api.fetchActivityLog().then(setActivityLog);
-        if (activeView === 'users') fetchAllUsers(); // Fetch users when user management view is active
+        if (activeView === 'users') fetchAllUsers(); 
     }, [activeView]);
 
     useEffect(() => {
@@ -548,7 +553,14 @@ const AdminDashboard: React.FC = () => {
         setShowUserModal(false);
     };
     const handlePlanSave = async () => {
-        const p = { ...planForm, minInvestment: Number(planForm.minInvestment), dailyReturn: Number(planForm.dailyReturn), duration: Number(planForm.duration), expirationDate: planForm.expirationDate || undefined };
+        const p = { 
+            ...planForm, 
+            minInvestment: Number(planForm.minInvestment), 
+            dailyReturn: Number(planForm.dailyReturn), 
+            duration: Number(planForm.duration), 
+            expirationDate: planForm.expirationDate || undefined,
+            imageUrl: planForm.imageUrl || undefined 
+        };
         if (editingPlan) await updateInvestmentPlan(editingPlan.id, p);
         else await addInvestmentPlan(p);
         setShowPlanModal(false);
@@ -613,7 +625,7 @@ const AdminDashboard: React.FC = () => {
                 />
             );
             case 'users': return <UserManagementView users={users} onEdit={u => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email, balance: u.balance }); setShowUserModal(true); }} onToggle={u => updateUser(u.id, { isActive: !u.isActive })} onDelete={id => showConfirmation('Delete?', 'Irreversible action.', () => deleteUser(id))} onLoginAs={loginAsUserFunc} onViewInvestments={(u) => { setSelectedUserInvestments(u); setShowInvestmentsModal(true); }} />;
-            case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={p => { setEditingPlan(p); setPlanForm({ name: p.name, minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={id => showConfirmation('Delete Plan?', 'Are you sure?', () => deleteInvestmentPlan(id))} />;
+            case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={p => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={id => showConfirmation('Delete Plan?', 'Are you sure?', () => deleteInvestmentPlan(id))} />;
             case 'lucky_draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={p => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type, amount: p.amount }); setShowPrizeModal(true); }} onDelete={id => deleteLuckyDrawPrize(id)} onToggleWin={handleWinToggle} />;
             case 'comments': return <CommentsManagementView comments={comments} onDelete={id => deleteComment(id)} onEdit={c => { setEditingComment(c); setCommentText(c.text); setShowCommentModal(true); }} setViewingImage={setViewingImage} />;
             case 'chat': return <AdminChatView sessions={chatSessions} activeId={activeChatUser} messages={chatSessions.find((s: ChatSession) => s.userId === activeChatUser)?.messages || []} onSelect={uid => { setActiveChatUser(uid); markChatAsRead(uid); }} onSend={(txt, img) => activeChatUser && sendChatMessage(activeChatUser, { text: txt, imageUrl: img })} />;
@@ -806,7 +818,52 @@ const AdminDashboard: React.FC = () => {
             
             {/* Modals */}
             {showUserModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">Edit User</h3><input className="w-full border p-2 rounded mb-2" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} placeholder="Name" /><input className="w-full border p-2 rounded mb-2" value={userForm.phone} onChange={e => setUserForm({...userForm, phone: e.target.value})} placeholder="Phone" /><input className="w-full border p-2 rounded mb-2" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} placeholder="Email" /><input className="w-full border p-2 rounded mb-4" type="number" value={userForm.balance} onChange={e => setUserForm({...userForm, balance: parseFloat(e.target.value)})} placeholder="Balance" /><div className="flex justify-end gap-2"><button onClick={() => setShowUserModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleUserSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
-            {showPlanModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">{editingPlan ? 'Edit' : 'Add'} Plan</h3><input className="w-full border p-2 rounded mb-2" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} placeholder="Plan Name" /><input className="w-full border p-2 rounded mb-2" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} placeholder="Min Investment" /><input className="w-full border p-2 rounded mb-2" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} placeholder="Daily Return" /><input className="w-full border p-2 rounded mb-2" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} placeholder="Duration (Days)" /><input className="w-full border p-2 rounded mb-2" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} placeholder="Category (e.g. VIP)" /><div className="mb-4"><label className="text-xs text-gray-500">Expiration (Optional)</label><input className="w-full border p-2 rounded" type="datetime-local" value={planForm.expirationDate} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} /></div><div className="flex justify-end gap-2"><button onClick={() => setShowPlanModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handlePlanSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
+            
+            {showPlanModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
+                    <h3 className="font-bold mb-4">{editingPlan ? 'Edit' : 'Add'} Plan</h3>
+                    <div className="mb-4">
+                        <label className="text-xs text-gray-500 block mb-1">Plan Image</label>
+                        <div className="relative h-32 bg-gray-100 rounded border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden group cursor-pointer">
+                            {planForm.imageUrl ? (
+                                <img src={planForm.imageUrl} alt="Plan" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="text-center text-gray-400">
+                                    <ImageIcon size={24} className="mx-auto mb-1" />
+                                    <span className="text-xs">Click to Upload</span>
+                                </div>
+                            )}
+                            <input 
+                                type="file" 
+                                className="absolute inset-0 opacity-0 cursor-pointer" 
+                                accept="image/*"
+                                onChange={e => { 
+                                    const f = e.target.files?.[0]; 
+                                    if (f) { 
+                                        const r = new FileReader(); 
+                                        r.onload = ev => setPlanForm({...planForm, imageUrl: ev.target?.result as string}); 
+                                        r.readAsDataURL(f); 
+                                    } 
+                                }} 
+                            />
+                            {planForm.imageUrl && (
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <span className="text-white text-xs font-bold">Change</span>
+                                </div>
+                            )}
+                        </div>
+                        {planForm.imageUrl && <button onClick={() => setPlanForm({...planForm, imageUrl: ''})} className="text-xs text-red-500 mt-1 hover:underline">Remove Image</button>}
+                    </div>
+                    <input className="w-full border p-2 rounded mb-2" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} placeholder="Plan Name" />
+                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} placeholder="Min Investment" />
+                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} placeholder="Daily Return" />
+                    <input className="w-full border p-2 rounded mb-2" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} placeholder="Duration (Days)" />
+                    <input className="w-full border p-2 rounded mb-2" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} placeholder="Category (e.g. VIP)" />
+                    <div className="mb-4"><label className="text-xs text-gray-500">Expiration (Optional)</label><input className="w-full border p-2 rounded" type="datetime-local" value={planForm.expirationDate} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} /></div>
+                    <div className="flex justify-end gap-2"><button onClick={() => setShowPlanModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handlePlanSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div>
+                </div>
+            </div>}
+            
             {showPrizeModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">{editingPrize ? 'Edit' : 'Add'} Prize</h3><input className="w-full border p-2 rounded mb-2" value={prizeForm.name} onChange={e => setPrizeForm({...prizeForm, name: e.target.value})} placeholder="Prize Name" /><select className="w-full border p-2 rounded mb-2" value={prizeForm.type} onChange={e => setPrizeForm({...prizeForm, type: e.target.value as any})}><option value="money">Money</option><option value="bonus">Bonus</option><option value="physical">Physical</option><option value="nothing">Nothing</option></select><input className="w-full border p-2 rounded mb-4" type="number" value={prizeForm.amount} onChange={e => setPrizeForm({...prizeForm, amount: parseFloat(e.target.value)})} placeholder="Amount/Value" /><div className="flex justify-end gap-2"><button onClick={() => setShowPrizeModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handlePrizeSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
             {showCommentModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">Edit Comment</h3><textarea className="w-full border p-2 rounded mb-4 h-32" value={commentText} onChange={e => setCommentText(e.target.value)} /><div className="flex justify-end gap-2"><button onClick={() => setShowCommentModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleCommentSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
             {showInvestmentsModal && selectedUserInvestments && <UserInvestmentsModal user={selectedUserInvestments} onClose={() => setShowInvestmentsModal(false)} />}

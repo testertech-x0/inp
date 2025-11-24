@@ -65,6 +65,7 @@ export interface User {
 export interface InvestmentPlan {
   id:string;
   name: string;
+  imageUrl?: string; // Added image URL
   minInvestment: number;
   dailyReturn: number;
   duration: number;
@@ -196,7 +197,7 @@ export interface AppContextType {
   paymentSettings: PaymentSettings;
   pendingDeposit: { upiId?: string; qrCode?: string; amount: number; transactionId: string; } | null;
   financialRequests: Transaction[]; 
-  financialHistory: Transaction[]; // Added
+  financialHistory: Transaction[]; 
   setCurrentView: (view: string) => void;
   
   register: (userData: Pick<User, 'phone' | 'name'> & { password: string; inviteCode?: string }) => Promise<{ success: boolean; userId?: string }>;
@@ -215,12 +216,12 @@ export interface AppContextType {
   showConfirmation: (title: string, message: string | ReactNode, onConfirm: () => void) => void;
   dismissSms: (id: number) => void;
   
-  initiateDeposit: (amount: number) => void;
+  initiateDeposit: (amount: number, methodId?: string) => void;
   submitDepositRequest: (transactionId: string, proofImgBase64: string) => Promise<{ success: boolean }>;
   makeWithdrawal: (userId: string, amount: number, fundPassword: string) => Promise<{ success: boolean; message?: string }>;
   
   fetchFinancialRequests: () => Promise<void>;
-  fetchFinancialHistory: () => Promise<void>; // Added
+  fetchFinancialHistory: () => Promise<void>; 
   approveFinancialRequest: (transaction: Transaction) => Promise<{ success: boolean }>;
   rejectFinancialRequest: (transaction: Transaction) => Promise<{ success: boolean }>;
   distributeDailyEarnings: () => Promise<{ success: boolean; message: string; }>;
@@ -230,10 +231,8 @@ export interface AppContextType {
   updateInvestmentPlan: (planId: string, updates: Partial<Omit<InvestmentPlan, 'id'>>) => Promise<{ success: boolean; message?: string }>;
   deleteInvestmentPlan: (planId: string) => Promise<void>;
   
-  // requestBankAccountOtp removed
-  updateBankAccount: (userId: string, accountDetails: Omit<BankAccount, 'bankName'>) => Promise<{ success: boolean; message?: string }>; // OTP param removed
+  updateBankAccount: (userId: string, accountDetails: Omit<BankAccount, 'bankName'>) => Promise<{ success: boolean; message?: string }>; 
   playLuckyDraw: () => Promise<{ success: boolean; prize?: Prize }>;
-  // requestFundPasswordOtp removed
   updateFundPassword: (userId: string, newFundPassword: string) => Promise<{ success: boolean; message?: string }>;
   markNotificationsAsRead: () => Promise<void>;
   updateAppName: (newName: string) => Promise<void>;
@@ -249,8 +248,7 @@ export interface AppContextType {
   updateSocialLinks: (links: Partial<SocialLinks>) => Promise<void>;
   updatePaymentSettings: (settings: Partial<PaymentSettings>) => Promise<void>;
   
-  // requestPasswordResetOtp removed
-  resetPassword: (phone: string, newPassword: string) => Promise<{ success: boolean; message?: string }>; // OTP param removed, renamed from resetPasswordWithOtp
+  resetPassword: (phone: string, newPassword: string) => Promise<{ success: boolean; message?: string }>; 
   
   addLuckyDrawPrize: (prizeData: Omit<Prize, 'id'>) => Promise<{ success: boolean; message?: string }>;
   updateLuckyDrawPrize: (prizeId: string, updates: Partial<Omit<Prize, 'id'>>) => Promise<{ success: boolean; message?: string }>;
