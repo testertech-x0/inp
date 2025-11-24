@@ -56,11 +56,13 @@ export interface User {
   luckyDrawChances: number;
   fundPassword?: string | null;
   language?: string;
-  dailyCheckIns?: string[];
+  dailyCheckIns?: string[]; // Deprecated in favor of streak logic, kept for backward compat if needed
+  checkInStreak: number; // Current streak count
+  lastCheckInDate?: string; // ISO Date string YYYY-MM-DD
   referralCode?: string;
   referrerId?: string;
   teamIncome?: number;
-  isAppUninstalled?: boolean; // New flag for remote uninstall
+  isAppUninstalled?: boolean; 
 }
 
 export interface InvestmentPlan {

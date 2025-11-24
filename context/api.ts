@@ -78,6 +78,8 @@ export const register = async (data: { name: string; phone: string; password: st
         luckyDrawChances: 1, // NEW REGISTER USERS GET 1 COIN
         language: 'en',
         dailyCheckIns: [],
+        checkInStreak: 0,
+        lastCheckInDate: '',
         referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
         referrerId: data.inviteCode ? 'mock_referrer' : undefined, // Simplified
         teamIncome: 0
@@ -110,7 +112,12 @@ export const login = async (identifier: string, password: string) => {
 
     if (!user.isActive) throw new Error("Account is blocked");
 
-    user.loginActivity.push({ date: new Date().toISOString(), device: 'Web Browser' });
+    // Add simple login activity log
+    user.loginActivity = user.loginActivity || [];
+    user.loginActivity.unshift({ date: new Date().toISOString(), device: 'Web Browser' });
+    // Keep last 20 logs
+    if (user.loginActivity.length > 20) user.loginActivity = user.loginActivity.slice(0, 20);
+
     setStorage(STORAGE_KEYS.USERS, users);
     await logActivity(user.id, user.name, 'User Logged In');
     
@@ -704,29 +711,69 @@ export const markNotificationsAsRead = async () => {
     return { success: true, user: await fetchUserProfile() }; 
 };
 export const changeAdminPassword = async (oldPass: string, newPass: string) => ({ success: true });
+
 export const performDailyCheckIn = async () => {
+     await delay(300);
      const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
      const activeId = localStorage.getItem('mock_active_user_id');
      const idx = users.findIndex(u => u.id === activeId);
+     
      if(idx !== -1) {
-         const today = new Date().toISOString().split('T')[0];
-         if(!users[idx].dailyCheckIns) users[idx].dailyCheckIns = [];
+         const user = users[idx];
+         const todayStr = new Date().toISOString().split('T')[0];
+         const lastCheckIn = user.lastCheckInDate || '';
          
-         if(!users[idx].dailyCheckIns?.includes(today)) {
-             users[idx].dailyCheckIns?.push(today);
-             users[idx].balance += 10;
-             users[idx].transactions.unshift({
-                 id: 'CHK'+Date.now(),
-                 type: 'reward',
-                 amount: 10,
-                 description: 'Daily Check-in Reward',
-                 date: new Date().toISOString(),
-                 status: 'success'
-             });
-             setStorage(STORAGE_KEYS.USERS, users);
-             return { success: true, message: 'Checked in!', reward: 10, user: users[idx] };
+         // 1. Check if already checked in today
+         if (lastCheckIn === todayStr) {
+             throw new Error("Already checked in today!");
          }
-         return { success: false, message: 'Already checked in', reward: 0, user: users[idx] };
+
+         // 2. Calculate new Streak
+         let newStreak = 1;
+         if (lastCheckIn) {
+             const lastDate = new Date(lastCheckIn);
+             const todayDate = new Date(todayStr);
+             const diffTime = Math.abs(todayDate.getTime() - lastDate.getTime());
+             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+             
+             // If consecutive day (diff is 1), increment streak
+             if (diffDays === 1) {
+                 newStreak = (user.checkInStreak || 0) + 1;
+             }
+             // If streak exceeds 14 days (cycle), reset to 1 (or keep building depending on game logic)
+             // Usually check-in apps have a 7 or 14 day cycle that resets
+             if (newStreak > 14) {
+                 newStreak = 1; 
+             }
+         }
+
+         // 3. Calculate Reward
+         let reward = 10; // Base reward
+         if (newStreak === 7) reward = 20; // Milestone 1
+         if (newStreak === 14) reward = 50; // Milestone 2
+
+         // 4. Update User
+         user.checkInStreak = newStreak;
+         user.lastCheckInDate = todayStr;
+         user.balance += reward;
+         user.transactions.unshift({
+             id: 'CHK' + Date.now(),
+             type: 'reward',
+             amount: reward,
+             description: `Day ${newStreak} Check-in Reward`,
+             date: new Date().toISOString(),
+             status: 'success'
+         });
+
+         setStorage(STORAGE_KEYS.USERS, users);
+         
+         // Return custom success object to trigger UI modal
+         return { 
+             success: true, 
+             message: 'Check-in Successful!', 
+             reward: reward, 
+             user 
+         };
      }
      throw new Error("User not found");
 };
