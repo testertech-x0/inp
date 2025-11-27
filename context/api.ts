@@ -126,10 +126,18 @@ export const login = async (identifier: string, password: string) => {
 
 export const adminLogin = async (username: string, password: string) => {
     await delay();
+    
+    // FULL ADMIN
     if (username === 'admin' && password === 'password') {
-        return { success: true, token: 'admin_token' };
+        return { success: true, token: 'admin_token', role: 'admin' as const };
     }
-    throw new Error("Invalid Admin credentials");
+    
+    // EMPLOYEE (Financial Manager)
+    if (username === 'employee' && password === 'password') {
+        return { success: true, token: 'employee_token', role: 'employee' as const };
+    }
+
+    throw new Error("Invalid credentials");
 };
 
 // --- USER DATA ---

@@ -23,7 +23,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]); 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [admin, setAdmin] = useState<Admin>({ username: 'admin', password: '', isLoggedIn: false });
+  const [admin, setAdmin] = useState<Admin>({ username: 'admin', password: '', isLoggedIn: false, role: 'admin' });
   const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>([]);
   const [currentView, setCurrentView] = useState('login');
   const [loginAsUser, setLoginAsUser] = useState<User | null>(null);
@@ -62,6 +62,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             
             const token = localStorage.getItem('authToken');
             const userType = localStorage.getItem('userType');
+            const adminRole = localStorage.getItem('adminRole') as 'admin' | 'employee' | null;
             
             // Check for Admin Query Param
             const params = new URLSearchParams(window.location.search);
@@ -69,7 +70,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
             if (token) {
                  if (userType === 'admin') {
-                    setAdmin({ username: 'admin', password: '', isLoggedIn: true });
+                    setAdmin({ 
+                        username: adminRole === 'employee' ? 'employee' : 'admin', 
+                        password: '', 
+                        isLoggedIn: true, 
+                        role: adminRole || 'admin' 
+                    });
                     setCurrentView('admin-dashboard');
                 } else {
                     // Mock User Login Persist
@@ -125,11 +131,26 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   
   const register = async (userData: any) => { try { const { user } = await api.register(userData); localStorage.setItem('mock_active_user_id', user.id); addNotification(`Account created!`, 'success'); return { success: true, userId: user.id }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false }; } };
   const login = async (identifier: string, password: string) => { try { const { token, user } = await api.login(identifier, password); localStorage.setItem('authToken', token); localStorage.setItem('userType', 'user'); localStorage.setItem('mock_active_user_id', user.id); setCurrentUser(user); setCurrentView('home'); addNotification(`Welcome back, ${user.name}!`, 'success'); return { success: true }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false, message: error.message }; } };
-  const adminLogin = async (username: string, password: string) => { try { const { token } = await api.adminLogin(username, password); localStorage.setItem('authToken', token); localStorage.setItem('userType', 'admin'); setAdmin({ username, password: '', isLoggedIn: true }); setCurrentView('admin-dashboard'); addNotification('Admin login successful.', 'success'); return { success: true }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false, message: error.message }; } };
+  const adminLogin = async (username: string, password: string) => { 
+      try { 
+          const { token, role } = await api.adminLogin(username, password); 
+          localStorage.setItem('authToken', token); 
+          localStorage.setItem('userType', 'admin'); 
+          localStorage.setItem('adminRole', role || 'admin');
+          setAdmin({ username, password: '', isLoggedIn: true, role: role || 'admin' }); 
+          setCurrentView('admin-dashboard'); 
+          addNotification(`${role === 'employee' ? 'Employee' : 'Admin'} login successful.`, 'success'); 
+          return { success: true }; 
+      } catch (error: any) { 
+          addNotification(error.message, 'error'); 
+          return { success: false, message: error.message }; 
+      } 
+  };
   
   const handleLogout = () => { 
       localStorage.removeItem('authToken'); 
       localStorage.removeItem('userType'); 
+      localStorage.removeItem('adminRole');
       localStorage.removeItem('loginAsUser'); 
       localStorage.removeItem('mock_active_user_id'); 
       sessionStorage.removeItem('has_seen_notice'); 
@@ -138,7 +159,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       setAdmin(prev => ({ ...prev, isLoggedIn: false })); 
   };
   const logout = () => { addNotification("You have been logged out.", 'info'); if (loginAsUser) { returnToAdmin(); } else { handleLogout(); setCurrentView('login'); } };
-  const adminLogout = async () => { handleLogout(); setCurrentView('login'); addNotification("Admin logged out.", 'info'); };
+  const adminLogout = async () => { handleLogout(); setCurrentView('login'); addNotification("Logged out.", 'info'); };
   const loginAsUserFunc = async (userId: string) => { const user = users.find(u => u.id === userId); if (user) { setLoginAsUser(user); setCurrentUser(user); localStorage.setItem('loginAsUser', JSON.stringify(user)); setCurrentView('home'); addNotification(`Now viewing as ${user.name} (${user.id}).`, 'info'); } };
   const returnToAdmin = async () => { addNotification('Returned to Admin Dashboard.', 'info'); setLoginAsUser(null); setCurrentUser(null); localStorage.removeItem('loginAsUser'); setCurrentView('admin-dashboard'); };
   

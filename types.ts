@@ -80,6 +80,7 @@ export interface Admin {
   username: string;
   password?: string;
   isLoggedIn: boolean;
+  role: 'admin' | 'employee'; // Added role
 }
 
 export type NotificationType = 'success' | 'error' | 'info' | 'warning';
@@ -206,7 +207,7 @@ export interface AppContextType {
   
   register: (userData: Pick<User, 'phone' | 'name'> & { password: string; inviteCode?: string }) => Promise<{ success: boolean; userId?: string }>;
   login: (identifier: string, password: string) => Promise<{ success: boolean; message?: string }>;
-  adminLogin: (username: string, password: string) => Promise<{ success: boolean; message?: string }>;
+  adminLogin: (username: string, password: string) => Promise<{ success: boolean; message?: string; role?: 'admin' | 'employee' }>;
   logout: () => void;
   adminLogout: () => Promise<void>;
   loginAsUserFunc: (userId: string) => Promise<void>;

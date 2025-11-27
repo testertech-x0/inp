@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, FC } from 'react';
-import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw } from 'lucide-react';
+import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry } from '../../types';
 import { TransactionIcon } from '../user/BillDetailsScreen';
@@ -504,7 +504,7 @@ const SystemLogsView: FC<{ logs: ActivityLogEntry[] }> = ({ logs }) => (
 
 const AdminDashboard: React.FC = () => {
     const { 
-        users, adminLogout, appName, updateAppName, appLogo, updateAppLogo, themeColor, updateThemeColor,
+        users, admin, adminLogout, appName, updateAppName, appLogo, updateAppLogo, themeColor, updateThemeColor,
         socialLinks, updateSocialLinks, addNotification, showConfirmation,
         investmentPlans, addInvestmentPlan, updateInvestmentPlan, deleteInvestmentPlan,
         luckyDrawPrizes, luckyDrawWinningPrizeIds, addLuckyDrawPrize, updateLuckyDrawPrize, deleteLuckyDrawPrize, setLuckyDrawWinningPrizes,
@@ -517,7 +517,8 @@ const AdminDashboard: React.FC = () => {
         uninstallUserApp, uninstallAllUsersApps, restoreUserApp
     } = useApp() as any;
 
-    const [activeView, setActiveView] = useState('dashboard');
+    // Determine default view based on role
+    const [activeView, setActiveView] = useState(admin?.role === 'employee' ? 'financial' : 'dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
     
@@ -611,7 +612,7 @@ const AdminDashboard: React.FC = () => {
         });
     };
 
-    const navItems = [
+    const allNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'financial', label: 'Financial Requests', icon: DollarSign },
         { id: 'users', label: 'User Management', icon: Users },
@@ -623,7 +624,17 @@ const AdminDashboard: React.FC = () => {
         { id: 'settings', label: 'Platform Settings', icon: Settings },
     ];
 
+    // Filter Navigation based on Role
+    const navItems = admin?.role === 'employee' 
+        ? allNavItems.filter(item => ['financial', 'chat'].includes(item.id)) 
+        : allNavItems;
+
     const renderContent = () => {
+        // Guard clause for employee access
+        if (admin?.role === 'employee' && !['financial', 'chat'].includes(activeView)) {
+            return <div className="p-10 text-center text-gray-500">Access Denied</div>;
+        }
+
         switch (activeView) {
             case 'dashboard': return <DashboardView />;
             case 'financial': return (
@@ -942,9 +953,16 @@ const AdminDashboard: React.FC = () => {
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 justify-between shrink-0 shadow-sm z-10">
                     <div className="flex items-center gap-3">
                         <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-                        <h1 className="text-xl font-semibold text-gray-800">{navItems.find(i => i.id === activeView)?.label}</h1>
+                        <h1 className="text-xl font-semibold text-gray-800">{navItems.find(i => i.id === activeView)?.label || 'Panel'}</h1>
                     </div>
-                    <div className="flex items-center gap-2"><span className="text-sm text-gray-500">Admin</span><div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">A</div></div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">
+                            {admin?.role === 'employee' ? 'Employee' : 'Admin'}
+                        </span>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${admin?.role === 'employee' ? 'bg-orange-500' : 'bg-blue-600'}`}>
+                            {admin?.role === 'employee' ? 'E' : 'A'}
+                        </div>
+                    </div>
                 </header>
                 <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100">{renderContent()}</main>
             </div>
