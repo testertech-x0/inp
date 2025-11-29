@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useEffect, FC } from 'react';
-import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock } from 'lucide-react';
+import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock, UserPlus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry } from '../../types';
+import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry, Employee } from '../../types';
 import { TransactionIcon } from '../user/BillDetailsScreen';
 import * as api from '../../context/api';
 
@@ -500,6 +500,64 @@ const SystemLogsView: FC<{ logs: ActivityLogEntry[] }> = ({ logs }) => (
     </div>
 );
 
+// Employee Management View
+const EmployeeManagementView: FC<{ 
+    employees: Employee[], 
+    onAdd: () => void, 
+    onEdit: (e: Employee) => void, 
+    onDelete: (id: string) => void 
+}> = ({ employees, onAdd, onEdit, onDelete }) => (
+    <div className="bg-white rounded-lg shadow">
+        <div className="p-6 border-b flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-800">Employee Management</h2>
+            <button onClick={onAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700">
+                <UserPlus size={18} /> Add Employee
+            </button>
+        </div>
+        <div className="overflow-x-auto">
+            <table className="w-full">
+                <thead className="bg-gray-50">
+                    <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                    {employees.map(emp => (
+                        <tr key={emp.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{emp.name}</td>
+                            <td className="px-6 py-4 text-sm text-gray-500">{emp.username}</td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${emp.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'}`}>
+                                    {emp.role}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4">
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${emp.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                    {emp.isActive ? 'Active' : 'Inactive'}
+                                </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                                <div className="flex justify-end gap-2">
+                                    <button onClick={() => onEdit(emp)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+                                        <Edit size={16} />
+                                    </button>
+                                    <button onClick={() => onDelete(emp.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+);
+
 // --- MAIN COMPONENT ---
 
 const AdminDashboard: React.FC = () => {
@@ -514,7 +572,8 @@ const AdminDashboard: React.FC = () => {
         financialRequests, financialHistory, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings,
         updateUser, deleteUser, loginAsUserFunc, changeAdminPassword, activityLog, setActivityLog, systemNotice, updateSystemNotice,
         fetchAllUsers,
-        uninstallUserApp, uninstallAllUsersApps, restoreUserApp
+        uninstallUserApp, uninstallAllUsersApps, restoreUserApp,
+        employees, fetchEmployees, addEmployee, updateEmployee, deleteEmployee
     } = useApp() as any;
 
     // Determine default view based on role
@@ -546,6 +605,11 @@ const AdminDashboard: React.FC = () => {
     const [showInvestmentsModal, setShowInvestmentsModal] = useState(false);
     const [selectedUserInvestments, setSelectedUserInvestments] = useState<User | null>(null);
 
+    // Employee Modal State
+    const [showEmployeeModal, setShowEmployeeModal] = useState(false);
+    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
+    const [employeeForm, setEmployeeForm] = useState({ name: '', username: '', password: '', role: 'employee', isActive: true });
+
     // Data Fetching
     useEffect(() => {
         if (activeView === 'financial') {
@@ -555,6 +619,7 @@ const AdminDashboard: React.FC = () => {
         }
         if (activeView === 'logs') api.fetchActivityLog().then(setActivityLog);
         if (activeView === 'users') fetchAllUsers(); 
+        if (activeView === 'employees') fetchEmployees();
     }, [activeView]);
 
     useEffect(() => {
@@ -611,11 +676,25 @@ const AdminDashboard: React.FC = () => {
              }
         });
     };
+    const handleEmployeeSave = async () => {
+        if (!employeeForm.name || !employeeForm.username) return;
+        if (editingEmployee) {
+            await updateEmployee(editingEmployee.id, employeeForm);
+        } else {
+            if (!employeeForm.password) {
+                addNotification('Password required for new employee', 'error');
+                return;
+            }
+            await addEmployee(employeeForm);
+        }
+        setShowEmployeeModal(false);
+    };
 
     const allNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'financial', label: 'Financial Requests', icon: DollarSign },
         { id: 'users', label: 'User Management', icon: Users },
+        { id: 'employees', label: 'Employee Management', icon: Shield },
         { id: 'plans', label: 'Plan Management', icon: Briefcase },
         { id: 'lucky_draw', label: 'Lucky Draw', icon: Gift },
         { id: 'comments', label: 'User Comments', icon: MessageSquare },
@@ -657,6 +736,12 @@ const AdminDashboard: React.FC = () => {
                 onViewInvestments={(u) => { setSelectedUserInvestments(u); setShowInvestmentsModal(true); }}
                 onUninstall={(id) => showConfirmation('Uninstall App for User?', 'This will remotely wipe access for this user. They will see an "App Removed" screen.', () => uninstallUserApp(id))}
                 onRestore={(id) => showConfirmation('Restore App Access?', 'This will allow the user to access the app again.', () => restoreUserApp(id))}
+            />;
+            case 'employees': return <EmployeeManagementView 
+                employees={employees} 
+                onAdd={() => { setEditingEmployee(null); setEmployeeForm({ name: '', username: '', password: '', role: 'employee', isActive: true }); setShowEmployeeModal(true); }}
+                onEdit={e => { setEditingEmployee(e); setEmployeeForm({ name: e.name, username: e.username, password: '', role: e.role, isActive: e.isActive }); setShowEmployeeModal(true); }}
+                onDelete={id => showConfirmation('Delete Employee?', 'They will lose access immediately.', () => deleteEmployee(id))}
             />;
             case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={p => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={id => showConfirmation('Delete Plan?', 'Are you sure?', () => deleteInvestmentPlan(id))} />;
             case 'lucky_draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={p => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type, amount: p.amount }); setShowPrizeModal(true); }} onDelete={id => deleteLuckyDrawPrize(id)} onToggleWin={handleWinToggle} />;
@@ -866,6 +951,32 @@ const AdminDashboard: React.FC = () => {
             {/* Modals */}
             {showUserModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">Edit User</h3><input className="w-full border p-2 rounded mb-2" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} placeholder="Name" /><input className="w-full border p-2 rounded mb-2" value={userForm.phone} onChange={e => setUserForm({...userForm, phone: e.target.value})} placeholder="Phone" /><input className="w-full border p-2 rounded mb-2" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} placeholder="Email" /><input className="w-full border p-2 rounded mb-4" type="number" value={userForm.balance} onChange={e => setUserForm({...userForm, balance: parseFloat(e.target.value)})} placeholder="Balance" /><div className="flex justify-end gap-2"><button onClick={() => setShowUserModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleUserSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
             
+            {/* Employee Modal */}
+            {showEmployeeModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-96">
+                        <h3 className="font-bold mb-4">{editingEmployee ? 'Edit Employee' : 'Add Employee'}</h3>
+                        <div className="space-y-3">
+                            <input className="w-full border p-2 rounded" value={employeeForm.name} onChange={e => setEmployeeForm({...employeeForm, name: e.target.value})} placeholder="Name" />
+                            <input className="w-full border p-2 rounded" value={employeeForm.username} onChange={e => setEmployeeForm({...employeeForm, username: e.target.value})} placeholder="Username" disabled={!!editingEmployee} />
+                            <input className="w-full border p-2 rounded" type="password" value={employeeForm.password} onChange={e => setEmployeeForm({...employeeForm, password: e.target.value})} placeholder={editingEmployee ? "New Password (Optional)" : "Password"} />
+                            <select className="w-full border p-2 rounded" value={employeeForm.role} onChange={e => setEmployeeForm({...employeeForm, role: e.target.value as any})}>
+                                <option value="admin">Admin</option>
+                                <option value="employee">Employee</option>
+                            </select>
+                            <label className="flex items-center gap-2">
+                                <input type="checkbox" checked={employeeForm.isActive} onChange={e => setEmployeeForm({...employeeForm, isActive: e.target.checked})} />
+                                <span>Active</span>
+                            </label>
+                        </div>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button onClick={() => setShowEmployeeModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+                            <button onClick={handleEmployeeSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {showPlanModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                 <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
                     <h3 className="font-bold mb-4">{editingPlan ? 'Edit' : 'Add'} Plan</h3>

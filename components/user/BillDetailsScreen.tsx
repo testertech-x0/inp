@@ -35,8 +35,8 @@ const TransactionDetailModal: React.FC<{ transaction: Transaction; onClose: () =
                         <div className="inline-block bg-gray-100 p-4 rounded-full mb-3">
                             <TransactionIcon type={transaction.type} />
                         </div>
-                        <p className={`text-3xl font-bold ${transaction.amount >= 0 ? 'text-green-600' : 'text-gray-800'}`}>
-                           {transaction.type === 'system' ? '' : `₹${Math.abs(transaction.amount).toFixed(2)}`}
+                        <p className={`text-3xl font-bold ${transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                           {transaction.type === 'system' ? '' : `${transaction.amount >= 0 ? '+' : '-'}₹${Math.abs(transaction.amount).toFixed(2)}`}
                         </p>
                         <p className="text-gray-600 font-medium">{transaction.description}</p>
                     </div>
@@ -180,8 +180,12 @@ const BillDetailsScreen: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className={`font-bold text-lg ${tx.amount >= 0 ? 'text-green-500' : 'text-gray-800'}`}>
-                                        {tx.type === 'system' ? '' : (tx.description === 'Sign in reward' && tx.amount === 0 ? '-₹0' : `₹${Math.abs(tx.amount).toFixed(2)}`)}
+                                    <p className={`font-bold text-lg ${tx.amount >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                        {tx.type === 'system' ? '' : (
+                                            <>
+                                                {tx.amount > 0 ? '+' : '-'}₹{Math.abs(tx.amount).toFixed(2)}
+                                            </>
+                                        )}
                                     </p>
                                     <p className={`text-[10px] uppercase font-bold ${tx.status === 'success' ? 'text-green-600' : tx.status === 'failed' ? 'text-red-500' : 'text-yellow-600'}`}>
                                         {tx.status || 'success'}

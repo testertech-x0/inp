@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Landmark, Lock, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Landmark, Lock, AlertCircle, ChevronRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const WithdrawScreen: React.FC = () => {
@@ -21,14 +21,19 @@ const WithdrawScreen: React.FC = () => {
     const fee = withdrawAmount * FEE_PERCENT;
     const finalAmount = withdrawAmount - fee;
 
+    const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value.replace(/\D/g, '');
+        if (val.length <= 6) setFundPassword(val);
+    };
+
     const handleWithdraw = async () => {
         const withdrawalAmount = parseFloat(amount);
         if (isNaN(withdrawalAmount) || withdrawalAmount < MIN_WITHDRAWAL) {
             addNotification(`Minimum withdrawal is ₹${MIN_WITHDRAWAL}`, 'error');
             return;
         }
-        if (!fundPassword) {
-            addNotification('Please enter your fund password.', 'error');
+        if (!fundPassword || fundPassword.length !== 6) {
+            addNotification('Please enter your 6-digit fund password.', 'error');
             return;
         }
         setIsWithdrawing(true);
@@ -49,7 +54,8 @@ const WithdrawScreen: React.FC = () => {
                isNaN(numAmount) || 
                numAmount < MIN_WITHDRAWAL || 
                numAmount > currentUser.balance || 
-               fundPassword.length === 0;
+               !currentUser.fundPassword ||
+               fundPassword.length !== 6;
     }
 
     return (
@@ -127,28 +133,42 @@ const WithdrawScreen: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <button onClick={() => setCurrentView('bank-account')} className="w-full text-center py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:bg-gray-100">
-                                + Add Bank Account
+                            <button onClick={() => setCurrentView('bank-account')} className="w-full text-center py-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:bg-gray-100 flex flex-col items-center gap-2">
+                                <span className="font-medium">+ Add Bank Account</span>
+                                <span className="text-xs text-gray-400">Required for withdrawal</span>
                             </button>
                         )}
                      </div>
-                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fund Password</label>
-                         <div className="relative">
-                            <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                            <input
-                                type="password"
-                                value={fundPassword}
-                                onChange={(e) => setFundPassword(e.target.value)}
-                                placeholder="Enter 6-digit fund password"
-                                maxLength={6}
-                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                            />
-                        </div>
-                        {!currentUser.fundPassword && (
-                            <button onClick={() => setCurrentView('fund-password')} className="text-xs text-blue-600 hover:underline mt-1">
-                                No fund password? Set one up.
+                     
+                     <div className="border-t pt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Security Verification</label>
+                        {currentUser.fundPassword ? (
+                            <div className="relative">
+                                <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input
+                                    type="password"
+                                    inputMode="numeric"
+                                    value={fundPassword}
+                                    onChange={handlePasswordChange}
+                                    placeholder="Enter 6-digit fund password"
+                                    maxLength={6}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                                />
+                            </div>
+                        ) : (
+                            <button 
+                                onClick={() => setCurrentView('fund-password')} 
+                                className="w-full bg-red-50 border border-red-100 text-red-600 py-3 rounded-lg flex items-center justify-between px-4 hover:bg-red-100 transition"
+                            >
+                                <span className="flex items-center gap-2 font-medium">
+                                    <AlertCircle size={18} />
+                                    Set Fund Password
+                                </span>
+                                <ChevronRight size={18} />
                             </button>
+                        )}
+                        {!currentUser.fundPassword && (
+                            <p className="text-xs text-gray-500 mt-2 ml-1">You must set a transaction password before withdrawing.</p>
                         )}
                      </div>
                 </div>
@@ -156,7 +176,7 @@ const WithdrawScreen: React.FC = () => {
                 <button 
                     onClick={handleWithdraw}
                     disabled={isConfirmDisabled()}
-                    className="w-full py-3 rounded-lg font-semibold transition text-white mt-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-green-200">
+                    className="w-full py-3 rounded-lg font-semibold transition text-white mt-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-green-200 disabled:shadow-none">
                     {isWithdrawing ? 'Processing...' : 'Confirm Withdrawal'}
                 </button>
             </main>

@@ -1,5 +1,5 @@
 
-import type { User, InvestmentPlan, Admin, ActivityLogEntry, ThemeColor, BankAccount, Prize, Comment, ChatSession, SocialLinks, PaymentSettings, ChatMessage, Transaction, Investment, LoginActivity, TeamStats } from '../types';
+import type { User, InvestmentPlan, Admin, ActivityLogEntry, ThemeColor, BankAccount, Prize, Comment, ChatSession, SocialLinks, PaymentSettings, ChatMessage, Transaction, Investment, LoginActivity, TeamStats, Employee } from '../types';
 
 // --- MOCK DATABASE ---
 
@@ -10,7 +10,8 @@ const STORAGE_KEYS = {
     ACTIVITY: 'wf_activity',
     COMMENTS: 'wf_comments',
     CHATS: 'wf_chats',
-    TRANSACTIONS: 'wf_transactions'
+    TRANSACTIONS: 'wf_transactions',
+    EMPLOYEES: 'wf_employees'
 };
 
 // Initial Data
@@ -27,6 +28,11 @@ const INITIAL_PRIZES: Prize[] = [
     { id: '3', name: 'Better Luck Next Time', type: 'nothing', amount: 0 },
     { id: '4', name: '₹1000 Cash', type: 'money', amount: 1000 },
     { id: '5', name: 'Mystery Box', type: 'bonus', amount: 100 },
+];
+
+const INITIAL_EMPLOYEES: Employee[] = [
+    { id: 'admin_1', name: 'Super Admin', username: 'admin', password: 'password', role: 'admin', isActive: true, createdAt: new Date().toISOString() },
+    { id: 'emp_1', name: 'Finance Manager', username: 'employee', password: 'password', role: 'employee', isActive: true, createdAt: new Date().toISOString() }
 ];
 
 // Helper to get/set storage
@@ -127,17 +133,70 @@ export const login = async (identifier: string, password: string) => {
 export const adminLogin = async (username: string, password: string) => {
     await delay();
     
-    // FULL ADMIN
-    if (username === 'admin' && password === 'password') {
-        return { success: true, token: 'admin_token', role: 'admin' as const };
-    }
+    // Fetch employees from storage (or use default if empty)
+    const employees = getStorage<Employee[]>(STORAGE_KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
     
-    // EMPLOYEE (Financial Manager)
-    if (username === 'employee' && password === 'password') {
-        return { success: true, token: 'employee_token', role: 'employee' as const };
+    const account = employees.find(e => e.username === username && e.password === password);
+
+    if (account) {
+        if (!account.isActive) throw new Error("Account suspended");
+        return { success: true, token: `admin_token_${account.id}`, role: account.role };
     }
 
     throw new Error("Invalid credentials");
+};
+
+// --- EMPLOYEE MANAGEMENT ---
+
+export const fetchEmployees = async () => {
+    await delay(100);
+    return getStorage<Employee[]>(STORAGE_KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
+};
+
+export const addEmployee = async (data: any) => {
+    await delay();
+    const employees = await fetchEmployees();
+    
+    if (employees.find(e => e.username === data.username)) {
+        throw new Error("Username already taken");
+    }
+
+    const newEmployee: Employee = {
+        id: Date.now().toString(),
+        name: data.name,
+        username: data.username,
+        password: data.password,
+        role: data.role,
+        isActive: true,
+        createdAt: new Date().toISOString()
+    };
+
+    employees.push(newEmployee);
+    setStorage(STORAGE_KEYS.EMPLOYEES, employees);
+    return { success: true };
+};
+
+export const updateEmployee = async (id: string, updates: any) => {
+    await delay();
+    const employees = await fetchEmployees();
+    const index = employees.findIndex(e => e.id === id);
+    if (index !== -1) {
+        employees[index] = { ...employees[index], ...updates };
+        setStorage(STORAGE_KEYS.EMPLOYEES, employees);
+        return { success: true };
+    }
+    throw new Error("Employee not found");
+};
+
+export const deleteEmployee = async (id: string) => {
+    await delay();
+    let employees = await fetchEmployees();
+    // Prevent deleting the last admin
+    if (employees.find(e => e.id === id)?.username === 'admin') {
+        throw new Error("Cannot delete main admin account");
+    }
+    employees = employees.filter(e => e.id !== id);
+    setStorage(STORAGE_KEYS.EMPLOYEES, employees);
 };
 
 // --- USER DATA ---
@@ -381,30 +440,27 @@ export const makeWithdrawal = async (userId: string, amount: number, fundPasswor
     const user = users.find(u => u.id === userId);
     if (!user) throw new Error("User not found");
 
-    // Minimum Withdrawal Validation
     if (amount < 200) throw new Error("Minimum withdrawal amount is ₹200");
 
     if (user.fundPassword && user.fundPassword !== fundPassword) throw new Error("Incorrect Fund Password");
     if (user.balance < amount) throw new Error("Insufficient balance");
 
-    // Precise Calculation
-    // Amount is the GROSS amount to deduct from balance
-    const grossAmount = parseFloat(amount.toFixed(2));
-    
-    // Fee is 5% of GROSS
-    const fee = parseFloat((grossAmount * 0.05).toFixed(2));
-    
-    // Net is what the user receives in bank
-    const netAmount = parseFloat((grossAmount - fee).toFixed(2));
+    // Precise Calculation using strict Number coercion and fixing decimals
+    const grossAmount = Number(amount.toFixed(2));
+    const fee = Number((grossAmount * 0.05).toFixed(2));
+    const netAmount = Number((grossAmount - fee).toFixed(2));
 
     // Deduct GROSS from balance
-    user.balance = parseFloat((user.balance - grossAmount).toFixed(2));
+    user.balance = Number((user.balance - grossAmount).toFixed(2));
+    
+    // Ensure balance doesn't go below zero (float safety)
+    if (user.balance < 0) user.balance = 0;
     
     const tx: Transaction = {
         id: 'WIT' + Date.now(),
         type: 'withdrawal',
-        amount: -grossAmount, // Transaction shows full deduction
-        description: `Withdrawal of ₹${grossAmount} (Fee: ₹${fee}, Net: ₹${netAmount})`,
+        amount: -grossAmount, // Transaction shows full deduction as a negative number
+        description: `Withdraw: ₹${grossAmount} | Fee: ₹${fee} | Net: ₹${netAmount}`,
         date: new Date().toISOString(),
         status: 'pending'
     };

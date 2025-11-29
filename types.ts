@@ -65,6 +65,16 @@ export interface User {
   isAppUninstalled?: boolean; 
 }
 
+export interface Employee {
+  id: string;
+  name: string;
+  username: string;
+  password?: string; // Optional when fetching, required when adding
+  role: 'admin' | 'employee';
+  createdAt: string;
+  isActive: boolean;
+}
+
 export interface InvestmentPlan {
   id:string;
   name: string;
@@ -184,6 +194,7 @@ export interface AppContextType {
   users: User[];
   currentUser: User | null;
   admin: Admin;
+  employees: Employee[];
   investmentPlans: InvestmentPlan[];
   currentView: string;
   loginAsUser: User | null;
@@ -269,6 +280,12 @@ export interface AppContextType {
   uninstallUserApp: (userId: string) => Promise<void>;
   uninstallAllUsersApps: () => Promise<void>;
   restoreUserApp: (userId: string) => Promise<void>;
+
+  // Employee Management
+  fetchEmployees: () => Promise<void>;
+  addEmployee: (data: Omit<Employee, 'id' | 'createdAt'>) => Promise<{ success: boolean }>;
+  updateEmployee: (id: string, updates: Partial<Employee>) => Promise<{ success: boolean }>;
+  deleteEmployee: (id: string) => Promise<void>;
 
   t: (key: string) => string;
   

@@ -1,6 +1,6 @@
 
 import React, { useState, createContext, useContext, ReactNode, useEffect } from 'react';
-import type { AppContextType, User, InvestmentPlan, Admin, Investment, Transaction, LoginActivity, Notification, NotificationType, ConfirmationState, ActivityLogEntry, BankAccount, ThemeColor, Prize, Comment, ChatSession, ChatMessage, SocialLinks, MockSms, PaymentSettings, TeamStats } from '../types';
+import type { AppContextType, User, InvestmentPlan, Admin, Investment, Transaction, LoginActivity, Notification, NotificationType, ConfirmationState, ActivityLogEntry, BankAccount, ThemeColor, Prize, Comment, ChatSession, ChatMessage, SocialLinks, MockSms, PaymentSettings, TeamStats, Employee } from '../types';
 import * as api from './api';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -24,6 +24,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [users, setUsers] = useState<User[]>([]); 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [admin, setAdmin] = useState<Admin>({ username: 'admin', password: '', isLoggedIn: false, role: 'admin' });
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [investmentPlans, setInvestmentPlans] = useState<InvestmentPlan[]>([]);
   const [currentView, setCurrentView] = useState('login');
   const [loginAsUser, setLoginAsUser] = useState<User | null>(null);
@@ -188,10 +189,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const restoreUserApp = async (userId: string) => { await api.restoreUserApp(userId); fetchAllUsers(); addNotification(`App access restored for user ${userId}`, 'success'); };
   const uninstallAllUsersApps = async () => { await api.uninstallAllUsersApps(); fetchAllUsers(); addNotification('All apps remotely removed.', 'error'); };
 
+  // Employee wrappers
+  const fetchEmployees = async () => { const emps = await api.fetchEmployees(); setEmployees(emps); };
+  const addEmployee = (d: any) => api.addEmployee(d).then(r => { addNotification('Employee added', 'success'); fetchEmployees(); return r; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; });
+  const updateEmployee = (id: string, u: any) => api.updateEmployee(id, u).then(r => { addNotification('Employee updated', 'success'); fetchEmployees(); return r; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; });
+  const deleteEmployee = (id: string) => api.deleteEmployee(id).then(() => { addNotification('Employee removed', 'success'); fetchEmployees(); }).catch(e => addNotification(e.message, 'error'));
+
   const t = (key: string) => { const lang = currentUser?.language || 'en'; const dict = translations[lang] || translations['en']; return dict[key] || translations['en'][key] || key; };
 
   const value: AppContextType = {
-    users, currentUser, admin, investmentPlans, currentView, loginAsUser, appName, appLogo, themeColor, isLoading, comments, chatSessions, socialLinks, luckyDrawPrizes, luckyDrawWinningPrizeIds, paymentSettings, activityLog, pendingDeposit: pendingPaymentDetails, financialRequests, financialHistory, systemNotice,
+    users, currentUser, admin, employees, investmentPlans, currentView, loginAsUser, appName, appLogo, themeColor, isLoading, comments, chatSessions, socialLinks, luckyDrawPrizes, luckyDrawWinningPrizeIds, paymentSettings, activityLog, pendingDeposit: pendingPaymentDetails, financialRequests, financialHistory, systemNotice,
     setCurrentView, register, login, adminLogin, logout, adminLogout, loginAsUserFunc, returnToAdmin, updateUser, deleteUser, investInPlan, maskPhone, addNotification, removeNotification, showConfirmation, fetchAllUsers,
     makeWithdrawal: (userId, amount, fundPassword) => makeWithdrawal(userId, amount, fundPassword),
     changeUserPassword: (id, o, n) => api.changeUserPassword(id, o, n).then(r => { addNotification('Password changed', 'success'); return r; }).catch(e => { addNotification(e.message, 'error'); return { success: false, message: e.message }; }),
@@ -220,7 +227,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     deleteLuckyDrawPrize: (id) => api.deleteLuckyDrawPrize(id).then(() => { setLuckyDrawPrizes(prev => prev.filter(p => p.id !== id)); addNotification('Prize deleted', 'success'); }).catch(e => addNotification(e.message, 'error')),
     setLuckyDrawWinningPrizes: (ids) => api.setLuckyDrawWinningPrizes(ids).then(() => { setLuckyDrawWinningPrizeIds(ids); addNotification('Force Win updated', 'success'); }).catch(e => addNotification(e.message, 'error')),
     initiateDeposit, submitDepositRequest, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings, dismissSms: () => {}, mockSms: [], t, fetchTeamStats, updateSystemNotice,
-    uninstallUserApp, uninstallAllUsersApps, restoreUserApp,
+    uninstallUserApp, uninstallAllUsersApps, restoreUserApp, fetchEmployees, addEmployee, updateEmployee, deleteEmployee,
     notifications, confirmation, hideConfirmation, handleConfirm, setUsers, setActivityLog, setInvestmentPlans, setComments, setChatSessions
   };
 
