@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ArrowLeft, Landmark, Lock, AlertCircle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Landmark, Lock, AlertCircle, ChevronRight, TrendingUp } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 const WithdrawScreen: React.FC = () => {
@@ -27,6 +27,12 @@ const WithdrawScreen: React.FC = () => {
     };
 
     const handleWithdraw = async () => {
+        if (!currentUser.bankAccount) {
+            addNotification('Please add your bank account details first.', 'warning');
+            setTimeout(() => setCurrentView('bank-account'), 1000);
+            return;
+        }
+
         const withdrawalAmount = parseFloat(amount);
         if (isNaN(withdrawalAmount) || withdrawalAmount < MIN_WITHDRAWAL) {
             addNotification(`Minimum withdrawal is ₹${MIN_WITHDRAWAL}`, 'error');
@@ -50,7 +56,7 @@ const WithdrawScreen: React.FC = () => {
     const isConfirmDisabled = () => {
         const numAmount = parseFloat(amount);
         return isWithdrawing || 
-               !currentUser.bankAccount || 
+               // !currentUser.bankAccount || // Allow click to trigger redirect logic
                isNaN(numAmount) || 
                numAmount < MIN_WITHDRAWAL || 
                numAmount > currentUser.balance || 
@@ -68,13 +74,18 @@ const WithdrawScreen: React.FC = () => {
             </header>
             
             <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                <div className="bg-white p-4 rounded-lg shadow flex justify-between items-center">
-                    <div>
-                        <p className="text-sm text-green-600 font-medium">Withdrawable Balance</p>
-                        <p className="text-3xl font-bold text-gray-800">₹{currentUser.balance.toFixed(2)}</p>
-                        <p className="text-xs text-gray-400 mt-1">Includes Earnings & Deposits</p>
+                {/* Balance and Returns Card */}
+                <div className="bg-gradient-to-r from-green-500 to-green-600 p-4 rounded-xl shadow-lg text-white grid grid-cols-2 gap-4">
+                    <div className="border-r border-green-400 pr-4">
+                        <p className="text-xs text-green-100 font-medium mb-1">Available Balance</p>
+                        <p className="text-2xl font-bold">₹{currentUser.balance.toFixed(2)}</p>
                     </div>
-                    <img src="https://img.icons8.com/plasticine/100/stack-of-coins.png" alt="Coins" className="w-16 h-16" />
+                    <div className="pl-2">
+                        <p className="text-xs text-green-100 font-medium mb-1 flex items-center gap-1">
+                            <TrendingUp size={12} /> Total Returns
+                        </p>
+                        <p className="text-2xl font-bold">₹{currentUser.totalReturns.toFixed(2)}</p>
+                    </div>
                 </div>
                 
                 <div className="bg-white p-4 rounded-lg shadow">
@@ -90,19 +101,19 @@ const WithdrawScreen: React.FC = () => {
                         />
                     </div>
                     
-                    {/* Fee Calculation Display */}
+                    {/* Fee Calculation Display - Logic: Shows Net Profit from withdrawal */}
                     {withdrawAmount > 0 && (
-                        <div className="mt-3 bg-gray-50 p-3 rounded-lg space-y-1 text-sm">
+                        <div className="mt-3 bg-gray-50 p-3 rounded-lg space-y-1 text-sm border border-gray-100">
                             <div className="flex justify-between text-gray-600">
-                                <span>Withdrawal:</span>
+                                <span>Withdraw Amount:</span>
                                 <span>₹{withdrawAmount.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between text-red-500">
-                                <span>Processing Fee (5%):</span>
+                                <span>Service Fee (5%):</span>
                                 <span>-₹{fee.toFixed(2)}</span>
                             </div>
-                            <div className="border-t pt-1 mt-1 flex justify-between font-bold text-green-700">
-                                <span>You Receive:</span>
+                            <div className="border-t pt-2 mt-2 flex justify-between font-bold text-green-700 text-base">
+                                <span>Net Received:</span>
                                 <span>₹{finalAmount.toFixed(2)}</span>
                             </div>
                         </div>
@@ -156,27 +167,32 @@ const WithdrawScreen: React.FC = () => {
                                 />
                             </div>
                         ) : (
-                            <button 
-                                onClick={() => setCurrentView('fund-password')} 
-                                className="w-full bg-red-50 border border-red-100 text-red-600 py-3 rounded-lg flex items-center justify-between px-4 hover:bg-red-100 transition"
-                            >
-                                <span className="flex items-center gap-2 font-medium">
-                                    <AlertCircle size={18} />
-                                    Set Fund Password
-                                </span>
-                                <ChevronRight size={18} />
-                            </button>
-                        )}
-                        {!currentUser.fundPassword && (
-                            <p className="text-xs text-gray-500 mt-2 ml-1">You must set a transaction password before withdrawing.</p>
+                            <>
+                                <button 
+                                    onClick={() => setCurrentView('fund-password')} 
+                                    className="w-full bg-red-50 border border-red-100 text-red-600 py-3 rounded-lg flex items-center justify-between px-4 hover:bg-red-100 transition"
+                                >
+                                    <span className="flex items-center gap-2 font-medium">
+                                        <AlertCircle size={18} />
+                                        Set Fund Password
+                                    </span>
+                                    <ChevronRight size={18} />
+                                </button>
+                                <p className="text-xs text-gray-500 mt-2 ml-1">You must set a transaction password before withdrawing.</p>
+                            </>
                         )}
                      </div>
                 </div>
                 
                 <button 
                     onClick={handleWithdraw}
-                    disabled={isConfirmDisabled()}
-                    className="w-full py-3 rounded-lg font-semibold transition text-white mt-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg shadow-green-200 disabled:shadow-none">
+                    disabled={isConfirmDisabled() && !!currentUser.bankAccount} 
+                    className={`w-full py-3 rounded-lg font-semibold transition text-white mt-2 shadow-lg ${
+                        isConfirmDisabled() && !!currentUser.bankAccount 
+                        ? 'bg-gray-300 cursor-not-allowed shadow-none' 
+                        : 'bg-green-500 hover:bg-green-600 shadow-green-200'
+                    }`}
+                >
                     {isWithdrawing ? 'Processing...' : 'Confirm Withdrawal'}
                 </button>
             </main>

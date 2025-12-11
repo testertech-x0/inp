@@ -16,6 +16,12 @@ const DepositScreen: React.FC = () => {
   const isValid = !isNaN(depositAmount) && depositAmount >= 200;
 
   const handleDeposit = async () => {
+    if (!currentUser.bankAccount) {
+        addNotification('Please bind your bank account details first.', 'warning');
+        setTimeout(() => setCurrentView('bank-account'), 1000);
+        return;
+    }
+
     if (!isValid) {
       addNotification('Minimum deposit amount is ₹200.', 'error');
       return;
@@ -71,8 +77,8 @@ const DepositScreen: React.FC = () => {
 
             <button 
               onClick={handleDeposit}
-              disabled={!isValid || isProcessing}
-              className={`w-full py-3 rounded-lg font-semibold transition text-white mt-4 ${isValid ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'} disabled:bg-green-300`}
+              disabled={isProcessing}
+              className={`w-full py-3 rounded-lg font-semibold transition text-white mt-4 ${isValid || !currentUser.bankAccount ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 cursor-not-allowed'} disabled:bg-green-300`}
             >
               {isProcessing ? 'Initiating...' : 'Proceed to Pay'}
             </button>
