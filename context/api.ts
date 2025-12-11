@@ -773,8 +773,38 @@ export const updateFundPassword = async (userId: string, newPass: string) => {
     }
     throw new Error("User not found");
 };
-export const markNotificationsAsRead = async () => { 
-    return { success: true, user: await fetchUserProfile() }; 
+
+export const markNotificationsAsRead = async () => {
+    await delay(100);
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
+    const activeId = localStorage.getItem('mock_active_user_id');
+    const index = users.findIndex(u => u.id === activeId);
+
+    if (index !== -1) {
+        const user = users[index];
+        let hasChanges = false;
+        
+        // Map through transactions and mark as read
+        const updatedTransactions = user.transactions.map(t => {
+            if (!t.read) {
+                hasChanges = true;
+                return { ...t, read: true };
+            }
+            return t;
+        });
+
+        if (hasChanges) {
+            user.transactions = updatedTransactions;
+            users[index] = user;
+            setStorage(STORAGE_KEYS.USERS, users);
+        }
+        
+        return { success: true, user };
+    }
+    
+    // Fallback if user not found (unlikely for logged in)
+    const fallbackUser = await fetchUserProfile();
+    return { success: !!fallbackUser, user: fallbackUser };
 };
 
 export const changeAdminPassword = async (oldPass: string, newPass: string) => {

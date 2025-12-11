@@ -111,7 +111,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
  }, []);
 
   const addNotification = (message: string, type: NotificationType = 'info', duration: number = 4000) => {
-    const id = Date.now();
+    // Ensure unique ID even if called rapidly
+    const id = Date.now() + Math.random();
     // Limit queue to 3 most recent
     setNotifications(prev => {
         const newNote = { id, message, type, duration };
@@ -208,7 +209,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     updateBankAccount: (id, d) => api.updateBankAccount(id, d).then(r => { setCurrentUser(r.user); addNotification('Bank info updated', 'success'); return { success: true }; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; }),
     playLuckyDraw: () => api.playLuckyDraw().then(r => { setCurrentUser(r.user); return { success: true, prize: r.prize }; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; }),
     updateFundPassword: (id, n) => api.updateFundPassword(id, n).then(r => { setCurrentUser(r.user); addNotification('Fund pwd updated', 'success'); return { success: true }; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; }),
-    markNotificationsAsRead: () => api.markNotificationsAsRead().then(r => { setCurrentUser(r.user); }),
+    markNotificationsAsRead: () => api.markNotificationsAsRead().then(r => { if(r.user) setCurrentUser(r.user); }),
     updateAppName: async (n) => { setAppName(n); await api.updateAdminPlatformSettings({ appName: n }); },
     updateAppLogo: async (l) => { setAppLogo(l); await api.updateAdminPlatformSettings({ appLogo: l }); },
     updateThemeColor: async (c) => { setThemeColor(c); await api.updateAdminPlatformSettings({ themeColor: c }); },
