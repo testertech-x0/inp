@@ -166,7 +166,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const returnToAdmin = async () => { addNotification('Returned to Admin Dashboard.', 'info'); setLoginAsUser(null); setCurrentUser(null); localStorage.removeItem('loginAsUser'); setCurrentView('admin-dashboard'); };
   
   const fetchAllUsers = async () => { try { const allUsers = await api.fetchAllUsers(); setUsers(allUsers); } catch (e: any) { console.error("Failed to fetch users", e); } };
-
+  const addUser = async (userData: any) => { try { await api.addUser(userData); await fetchAllUsers(); addNotification('User added successfully', 'success'); return { success: true }; } catch (e: any) { addNotification(e.message, 'error'); return { success: false, message: e.message }; } };
   const updateUser = async (userId: string, updates: Partial<User>) => { try { const updatedUser = await api.updateAdminUser(userId, updates); if (currentUser?.id === userId) setCurrentUser(updatedUser); if (loginAsUser?.id === userId) setLoginAsUser(updatedUser); fetchAllUsers(); } catch (error: any) { addNotification(error.message, 'error'); } };
   const deleteUser = async (userId: string) => { try { await api.deleteAdminUser(userId); setUsers(prev => prev.filter(u => u.id !== userId)); addNotification(`User ${userId} deleted.`, 'success'); } catch (error: any) { addNotification(error.message, 'error'); } };
   const investInPlan = async (planId: string, quantity: number) => { if (!currentUser) return { success: false, message: 'Not logged in' }; try { const { user: updatedUser } = await api.investInPlan(planId, quantity); setCurrentUser(updatedUser); addNotification('Investment successful!', 'success'); return { success: true, message: 'Investment successful!' }; } catch (error: any) { addNotification(error.message, 'error'); return { success: false, message: error.message }; } };
@@ -200,7 +200,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const value: AppContextType = {
     users, currentUser, admin, employees, investmentPlans, currentView, loginAsUser, appName, appLogo, themeColor, isLoading, comments, chatSessions, socialLinks, luckyDrawPrizes, luckyDrawWinningPrizeIds, paymentSettings, activityLog, pendingDeposit: pendingPaymentDetails, financialRequests, financialHistory, systemNotice,
-    setCurrentView, register, login, adminLogin, logout, adminLogout, loginAsUserFunc, returnToAdmin, updateUser, deleteUser, investInPlan, maskPhone, addNotification, removeNotification, showConfirmation, fetchAllUsers,
+    setCurrentView, register, login, adminLogin, logout, adminLogout, loginAsUserFunc, returnToAdmin, updateUser, addUser, deleteUser, investInPlan, maskPhone, addNotification, removeNotification, showConfirmation, fetchAllUsers,
     makeWithdrawal: (userId, amount, fundPassword) => makeWithdrawal(userId, amount, fundPassword),
     changeUserPassword: (id, o, n) => api.changeUserPassword(id, o, n).then(r => { addNotification('Password changed', 'success'); return r; }).catch(e => { addNotification(e.message, 'error'); return { success: false, message: e.message }; }),
     addInvestmentPlan: (p) => api.addInvestmentPlan(p).then(r => { setInvestmentPlans(prev => [...prev, r]); addNotification('Plan added', 'success'); return { success: true }; }).catch(e => { addNotification(e.message, 'error'); return { success: false }; }),

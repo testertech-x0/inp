@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect, FC } from 'react';
 import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock, UserPlus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry, Employee } from '../../types';
-import { TransactionIcon } from '../user/BillDetailsScreen';
 import * as api from '../../context/api';
 
 // --- TYPES & HELPERS ---
@@ -12,7 +11,6 @@ const themeOptions: { name: ThemeColor; bgClass: string }[] = [
     { name: 'orange', bgClass: 'bg-orange-500' }, { name: 'red', bgClass: 'bg-red-500' }, { name: 'yellow', bgClass: 'bg-yellow-500' },
     { name: 'teal', bgClass: 'bg-teal-500' }, { name: 'pink', bgClass: 'bg-pink-500' },
 ];
-const primaryColor = 'slate'; // Admin theme color
 
 const ImagePreviewModal: FC<{ imageUrl: string; onClose: () => void }> = ({ imageUrl, onClose }) => (
     <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[60]" onClick={onClose}>
@@ -79,7 +77,6 @@ const FinancialManagementView: FC<{
     const [search, setSearch] = useState('');
     const [selectedUserBank, setSelectedUserBank] = useState<User | null>(null);
 
-    // Filter Logic
     const sourceList = subTab === 'pending' ? requests : history;
     const filtered = sourceList.filter(tx => {
         const matchesType = tx.type === mainTab;
@@ -88,11 +85,7 @@ const FinancialManagementView: FC<{
         const userPhone = (tx as any).userPhone || '';
         const userName = (tx as any).userName || '';
         
-        const matchesSearch = userId.toLowerCase().includes(term) || 
-                              userPhone.includes(term) || 
-                              userName.toLowerCase().includes(term);
-        
-        return matchesType && matchesSearch;
+        return matchesType && (userId.toLowerCase().includes(term) || userPhone.includes(term) || userName.toLowerCase().includes(term));
     });
 
     const handleViewBank = (userId: string) => {
@@ -102,7 +95,6 @@ const FinancialManagementView: FC<{
 
     return (
         <div className="space-y-6">
-            {/* Bank Details Modal */}
             {selectedUserBank && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setSelectedUserBank(null)}>
                     <div className="bg-white rounded-xl p-6 w-96 shadow-xl" onClick={e => e.stopPropagation()}>
@@ -132,43 +124,25 @@ const FinancialManagementView: FC<{
                          <h2 className="text-xl font-semibold text-gray-800">Financial Requests</h2>
                          <p className="text-xs text-gray-500">Manage Deposits and Withdrawals</p>
                     </div>
-                   
                     <button onClick={onDistribute} className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 shadow-sm text-sm font-medium transition-all active:scale-95">
                         <TrendingUp size={18} /> Distribute Daily Earnings
                     </button>
                 </div>
 
                 <div className="p-4 bg-gray-50 border-b flex flex-col md:flex-row gap-4 justify-between items-center">
-                    {/* Main Type Tabs */}
                     <div className="flex bg-white p-1 rounded-lg border shadow-sm">
-                        <button onClick={() => setMainTab('deposit')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${mainTab === 'deposit' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
-                            Deposits
-                        </button>
-                        <button onClick={() => setMainTab('withdrawal')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${mainTab === 'withdrawal' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>
-                            Withdrawals
-                        </button>
+                        <button onClick={() => setMainTab('deposit')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${mainTab === 'deposit' ? 'bg-green-100 text-green-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>Deposits</button>
+                        <button onClick={() => setMainTab('withdrawal')} className={`px-6 py-2 rounded-md text-sm font-medium transition-all ${mainTab === 'withdrawal' ? 'bg-red-100 text-red-700 shadow-sm' : 'text-gray-600 hover:bg-gray-50'}`}>Withdrawals</button>
                     </div>
-
-                    {/* Search Bar */}
                     <div className="relative w-full md:w-64">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                        <input 
-                            type="text" 
-                            placeholder="Search User ID / Phone..." 
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <input type="text" placeholder="Search User ID / Phone..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                 </div>
                 
                 <div className="p-4 flex gap-4 border-b">
-                     <button onClick={() => setSubTab('pending')} className={`pb-2 border-b-2 text-sm font-medium transition-colors ${subTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                        Pending ({mainTab === 'deposit' ? requests.filter(r => r.type === 'deposit').length : requests.filter(r => r.type === 'withdrawal').length})
-                    </button>
-                    <button onClick={() => setSubTab('history')} className={`pb-2 border-b-2 text-sm font-medium transition-colors ${subTab === 'history' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
-                        History Log
-                    </button>
+                     <button onClick={() => setSubTab('pending')} className={`pb-2 border-b-2 text-sm font-medium transition-colors ${subTab === 'pending' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>Pending</button>
+                    <button onClick={() => setSubTab('history')} className={`pb-2 border-b-2 text-sm font-medium transition-colors ${subTab === 'history' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>History Log</button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -183,70 +157,35 @@ const FinancialManagementView: FC<{
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                            {filtered.map(req => (
+                            {filtered.length > 0 ? filtered.map(req => (
                                 <tr key={req.id} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${mainTab === 'deposit' ? 'bg-green-500' : 'bg-red-500'}`}>
-                                                {mainTab === 'deposit' ? 'IN' : 'OUT'}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-900">{(req as any).userName || 'Unknown'}</p>
-                                                <p className="text-xs text-gray-500">{(req as any).userPhone}</p>
-                                                <p className="text-[10px] text-gray-400">ID: {(req as any).userId}</p>
-                                            </div>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs ${mainTab === 'deposit' ? 'bg-green-500' : 'bg-red-500'}`}>{mainTab === 'deposit' ? 'IN' : 'OUT'}</div>
+                                            <div><p className="text-sm font-medium text-gray-900">{(req as any).userName || 'Unknown'}</p><p className="text-xs text-gray-500">{(req as any).userPhone}</p><p className="text-[10px] text-gray-400">ID: {(req as any).userId}</p></div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`font-bold ${mainTab === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>
-                                            ₹{Math.abs(req.amount).toFixed(2)}
-                                        </span>
-                                        {mainTab === 'withdrawal' && <p className="text-xs text-gray-400">Fee: 5% included</p>}
-                                    </td>
+                                    <td className="px-6 py-4"><span className={`font-bold ${mainTab === 'deposit' ? 'text-green-600' : 'text-red-600'}`}>₹{Math.abs(req.amount).toFixed(2)}</span>{mainTab === 'withdrawal' && <p className="text-xs text-gray-400">Fee: 5% included</p>}</td>
                                     <td className="px-6 py-4">
                                         {mainTab === 'deposit' ? (
-                                            req.proofImg ? (
-                                                <button onClick={() => onViewProof(req.proofImg!)} className="flex items-center gap-1 text-blue-600 text-xs hover:underline bg-blue-50 px-2 py-1 rounded border border-blue-100">
-                                                    <Eye size={12} /> View Screenshot
-                                                </button>
-                                            ) : <span className="text-gray-400 text-xs">No Proof</span>
+                                            req.proofImg ? <button onClick={() => onViewProof(req.proofImg!)} className="flex items-center gap-1 text-blue-600 text-xs hover:underline bg-blue-50 px-2 py-1 rounded border border-blue-100"><Eye size={12} /> View Screenshot</button> : <span className="text-gray-400 text-xs">No Proof</span>
                                         ) : (
-                                            <button onClick={() => handleViewBank((req as any).userId)} className="flex items-center gap-1 text-purple-600 text-xs hover:underline bg-purple-50 px-2 py-1 rounded border border-purple-100">
-                                                <Landmark size={12} /> View Bank Details
-                                            </button>
+                                            <button onClick={() => handleViewBank((req as any).userId)} className="flex items-center gap-1 text-purple-600 text-xs hover:underline bg-purple-50 px-2 py-1 rounded border border-purple-100"><Landmark size={12} /> View Bank Details</button>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                        {new Date(req.date).toLocaleString()}
-                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(req.date).toLocaleString()}</td>
                                     <td className="px-6 py-4">
                                         {subTab === 'pending' ? (
                                             <div className="flex gap-2">
-                                                <button onClick={() => onApprove(req)} className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-xs font-medium shadow-sm flex items-center gap-1">
-                                                    <Check size={14} /> Approve
-                                                </button>
-                                                <button onClick={() => onReject(req)} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 text-xs font-medium border border-red-200 flex items-center gap-1">
-                                                    <X size={14} /> Reject
-                                                </button>
+                                                <button onClick={() => onApprove(req)} className="px-3 py-1.5 bg-green-600 text-white rounded-md hover:bg-green-700 text-xs font-medium shadow-sm flex items-center gap-1"><Check size={14} /> Approve</button>
+                                                <button onClick={() => onReject(req)} className="px-3 py-1.5 bg-red-100 text-red-600 rounded-md hover:bg-red-200 text-xs font-medium border border-red-200 flex items-center gap-1"><X size={14} /> Reject</button>
                                             </div>
                                         ) : (
-                                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${req.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {req.status}
-                                            </span>
+                                            <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${req.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>{req.status}</span>
                                         )}
                                     </td>
                                 </tr>
-                            ))}
-                            {filtered.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <Search size={32} className="text-gray-300" />
-                                            <p>No {mainTab} requests found.</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
+                            )) : <tr><td colSpan={5} className="px-6 py-12 text-center text-gray-500">No {mainTab} requests found.</td></tr>}
                         </tbody>
                     </table>
                 </div>
@@ -260,73 +199,54 @@ const UserInvestmentsModal: FC<{ user: User; onClose: () => void }> = ({ user, o
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
                 <header className="p-4 border-b flex justify-between items-center">
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800">Investment History</h3>
-                        <p className="text-sm text-gray-500">User: {user.name} ({user.phone})</p>
-                    </div>
+                    <div><h3 className="text-lg font-bold text-gray-800">Investment History</h3><p className="text-sm text-gray-500">User: {user.name} ({user.phone})</p></div>
                     <button onClick={onClose}><X size={24} className="text-gray-500 hover:text-gray-800" /></button>
                 </header>
                 <div className="p-6 overflow-y-auto">
                     {user.investments.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Plan Name</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Category</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Amount</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Daily / Total Rev</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Start Date</th>
-                                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
-                                    </tr>
-                                </thead>
+                                <thead className="bg-gray-50"><tr><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Plan Name</th><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Category</th><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Amount</th><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Daily / Total Rev</th><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Start Date</th><th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th></tr></thead>
                                 <tbody className="divide-y divide-gray-200">
                                     {user.investments.map((inv, idx) => {
-                                        // Calculate if expired roughly
                                         const start = new Date(inv.startDate).getTime();
                                         const end = start + (inv.revenueDays * 24 * 60 * 60 * 1000);
                                         const isExpired = Date.now() > end;
-                                        
                                         return (
                                             <tr key={idx}>
                                                 <td className="px-4 py-2 text-sm font-medium">{inv.planName}</td>
                                                 <td className="px-4 py-2 text-sm text-gray-500">{inv.category}</td>
                                                 <td className="px-4 py-2 text-sm font-bold text-green-600">₹{inv.investedAmount}</td>
-                                                <td className="px-4 py-2 text-sm">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-xs text-gray-500">Daily: ₹{inv.dailyEarnings}</span>
-                                                        <span className="text-xs font-semibold">Total: ₹{inv.totalRevenue}</span>
-                                                    </div>
-                                                </td>
+                                                <td className="px-4 py-2 text-sm"><div className="flex flex-col"><span className="text-xs text-gray-500">Daily: ₹{inv.dailyEarnings}</span><span className="text-xs font-semibold">Total: ₹{inv.totalRevenue}</span></div></td>
                                                 <td className="px-4 py-2 text-sm text-gray-500">{new Date(inv.startDate).toLocaleDateString()}</td>
-                                                <td className="px-4 py-2">
-                                                    <span className={`px-2 py-0.5 rounded text-xs font-bold ${isExpired ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'}`}>
-                                                        {isExpired ? 'Finished' : 'Active'}
-                                                    </span>
-                                                </td>
+                                                <td className="px-4 py-2"><span className={`px-2 py-0.5 rounded text-xs font-bold ${isExpired ? 'bg-gray-100 text-gray-600' : 'bg-green-100 text-green-600'}`}>{isExpired ? 'Finished' : 'Active'}</span></td>
                                             </tr>
                                         );
                                     })}
                                 </tbody>
                             </table>
                         </div>
-                    ) : (
-                        <div className="text-center text-gray-500 py-10">No investment records found for this user.</div>
-                    )}
+                    ) : <div className="text-center text-gray-500 py-10">No investment records found for this user.</div>}
                 </div>
             </div>
         </div>
     );
 }
 
-const UserManagementView: FC<{ users: User[], onEdit: (u: User) => void, onToggle: (u: User) => void, onDelete: (id: string) => void, onLoginAs: (id: string) => void, onViewInvestments: (u: User) => void, onUninstall: (id: string) => void, onRestore: (id: string) => void }> = ({ users, onEdit, onToggle, onDelete, onLoginAs, onViewInvestments, onUninstall, onRestore }) => {
+const UserManagementView: FC<{ users: User[], onAdd: () => void, onEdit: (u: User) => void, onToggle: (u: User) => void, onDelete: (id: string) => void, onLoginAs: (id: string) => void, onViewInvestments: (u: User) => void, onUninstall: (id: string) => void, onRestore: (id: string) => void }> = ({ users, onAdd, onEdit, onToggle, onDelete, onLoginAs, onViewInvestments, onUninstall, onRestore }) => {
     const [term, setTerm] = useState('');
     const filtered = users.filter(u => u.name.toLowerCase().includes(term.toLowerCase()) || u.phone.includes(term) || u.id.includes(term));
     return (
         <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b flex justify-between items-center">
                 <h2 className="text-xl font-semibold text-gray-800">User Management</h2>
-                <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} /><input type="text" placeholder="Search users..." value={term} onChange={e => setTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" /></div>
+                <div className="flex items-center gap-3">
+                    <button onClick={onAdd} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 text-sm font-medium"><UserPlus size={18} /> Add User</button>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input type="text" placeholder="Search users..." value={term} onChange={e => setTerm(e.target.value)} className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                </div>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full">
@@ -336,22 +256,12 @@ const UserManagementView: FC<{ users: User[], onEdit: (u: User) => void, onToggl
                             <td className="px-6 py-4"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">{user.name[0]}</div><div><p className="text-sm font-medium text-gray-900">{user.name}</p><p className="text-xs text-gray-500">{user.phone}</p></div></div></td>
                             <td className="px-6 py-4 text-sm text-gray-800 font-mono">₹{user.balance.toFixed(2)}</td>
                             <td className="px-6 py-4"><button onClick={() => onToggle(user)} className={`px-2 py-1 rounded-full text-xs font-semibold ${user.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{user.isActive ? 'Active' : 'Blocked'}</button></td>
-                            <td className="px-6 py-4">
-                                {user.isAppUninstalled ? (
-                                    <span className="flex items-center gap-1 text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100"><X size={12}/> Removed</span>
-                                ) : (
-                                    <span className="flex items-center gap-1 text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-100"><Check size={12}/> Installed</span>
-                                )}
-                            </td>
+                            <td className="px-6 py-4">{user.isAppUninstalled ? <span className="flex items-center gap-1 text-xs text-red-600 font-bold bg-red-50 px-2 py-1 rounded border border-red-100"><X size={12}/> Removed</span> : <span className="flex items-center gap-1 text-xs text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-100"><Check size={12}/> Installed</span>}</td>
                             <td className="px-6 py-4 text-right"><div className="flex justify-end gap-2">
                                 <button onClick={() => onViewInvestments(user)} className="p-1.5 text-purple-600 hover:bg-purple-50 rounded" title="View Investments"><Briefcase size={16} /></button>
                                 <button onClick={() => onLoginAs(user.id)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Login As"><LogIn size={16} /></button>
                                 <button onClick={() => onEdit(user)} className="p-1.5 text-gray-600 hover:bg-gray-100 rounded" title="Edit"><Edit size={16} /></button>
-                                {user.isAppUninstalled ? (
-                                    <button onClick={() => onRestore(user.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Restore App Access"><RefreshCw size={16} /></button>
-                                ) : (
-                                    <button onClick={() => onUninstall(user.id)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Uninstall App"><SmartphoneNfc size={16} /></button>
-                                )}
+                                {user.isAppUninstalled ? <button onClick={() => onRestore(user.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Restore App Access"><RefreshCw size={16} /></button> : <button onClick={() => onUninstall(user.id)} className="p-1.5 text-orange-600 hover:bg-orange-50 rounded" title="Uninstall App"><SmartphoneNfc size={16} /></button>}
                                 <button onClick={() => onDelete(user.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete User"><Trash2 size={16} /></button>
                             </div></td>
                         </tr>
@@ -368,11 +278,7 @@ const PlanManagementView: FC<{ plans: InvestmentPlan[], onAdd: () => void, onEdi
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-6">
             {plans.map(plan => (
                 <div key={plan.id} className="border rounded-xl p-5 hover:shadow-md transition bg-white overflow-hidden">
-                    {plan.imageUrl && (
-                        <div className="w-full h-32 mb-4 rounded-lg overflow-hidden border bg-gray-50">
-                            <img src={plan.imageUrl} alt={plan.name} className="w-full h-full object-cover" />
-                        </div>
-                    )}
+                    {plan.imageUrl && <div className="w-full h-32 mb-4 rounded-lg overflow-hidden border bg-gray-50"><img src={plan.imageUrl} alt={plan.name} className="w-full h-full object-cover" /></div>}
                     <div className="flex justify-between items-start mb-4">
                         <div><h3 className="font-bold text-lg text-gray-800">{plan.name}</h3><span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">{plan.category}</span></div>
                         <div className="flex gap-1"><button onClick={() => onEdit(plan)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"><Edit size={16} /></button><button onClick={() => onDelete(plan.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded"><Trash2 size={16} /></button></div>
@@ -500,7 +406,6 @@ const SystemLogsView: FC<{ logs: ActivityLogEntry[] }> = ({ logs }) => (
     </div>
 );
 
-// Employee Management View
 const EmployeeManagementView: FC<{ 
     employees: Employee[], 
     onAdd: () => void, 
@@ -575,20 +480,20 @@ const AdminDashboard: React.FC = () => {
         comments, deleteComment, updateComment,
         financialRequests, financialHistory, fetchFinancialRequests, fetchFinancialHistory, approveFinancialRequest, rejectFinancialRequest, distributeDailyEarnings,
         updateUser, deleteUser, loginAsUserFunc, changeAdminPassword, activityLog, setActivityLog, systemNotice, updateSystemNotice,
-        fetchAllUsers,
+        fetchAllUsers, addUser,
         uninstallUserApp, uninstallAllUsersApps, restoreUserApp,
         employees, fetchEmployees, addEmployee, updateEmployee, deleteEmployee
     } = useApp() as any;
 
-    // Determine default view based on role
     const [activeView, setActiveView] = useState(admin?.role === 'employee' ? 'financial' : 'dashboard');
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
+    const [viewingUserInvestments, setViewingUserInvestments] = useState<User | null>(null);
     
     // Modals State
     const [showUserModal, setShowUserModal] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
-    const [userForm, setUserForm] = useState({ name: '', phone: '', email: '', balance: 0 });
+    const [userForm, setUserForm] = useState({ name: '', phone: '', email: '', balance: 0, password: '' });
 
     const [showPlanModal, setShowPlanModal] = useState(false);
     const [editingPlan, setEditingPlan] = useState<InvestmentPlan | null>(null);
@@ -604,524 +509,161 @@ const AdminDashboard: React.FC = () => {
 
     const [activeChatUser, setActiveChatUser] = useState<string | null>(null);
     const [noticeText, setNoticeText] = useState(systemNotice || '');
-
-    // New State for User Investment Modal
-    const [showInvestmentsModal, setShowInvestmentsModal] = useState(false);
-    const [selectedUserInvestments, setSelectedUserInvestments] = useState<User | null>(null);
-
-    // Employee Modal State
-    const [showEmployeeModal, setShowEmployeeModal] = useState(false);
-    const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
-    const [employeeForm, setEmployeeForm] = useState({ name: '', username: '', password: '', role: 'employee', isActive: true });
+    const [newPassword, setNewPassword] = useState({ old: '', new: '' });
     
-    // Admin Password Change State
-    const [adminPassForm, setAdminPassForm] = useState({ old: '', new: '' });
-
-    // Data Fetching
-    useEffect(() => {
-        if (activeView === 'financial') {
-            fetchFinancialRequests();
-            fetchFinancialHistory();
-            fetchAllUsers(); 
-        }
-        if (activeView === 'logs') api.fetchActivityLog().then(setActivityLog);
-        if (activeView === 'users') fetchAllUsers(); 
-        if (activeView === 'employees') fetchEmployees();
-    }, [activeView]);
+    // Employee Modal
+    const [showEmpModal, setShowEmpModal] = useState(false);
+    const [editingEmp, setEditingEmp] = useState<Employee | null>(null);
+    const [empForm, setEmpForm] = useState({ name: '', username: '', password: '', role: 'employee' });
 
     useEffect(() => {
-        setNoticeText(systemNotice || '');
-    }, [systemNotice]);
+        fetchAllUsers();
+        fetchFinancialRequests();
+        fetchFinancialHistory();
+        if (admin.role === 'admin') fetchEmployees();
+    }, []);
 
-    // Handlers
-    const handleUserSave = async () => {
-        if (editingUser) await updateUser(editingUser.id, userForm);
-        setShowUserModal(false);
-    };
-    const handlePlanSave = async () => {
-        const p = { 
-            ...planForm, 
-            minInvestment: Number(planForm.minInvestment), 
-            dailyReturn: Number(planForm.dailyReturn), 
-            duration: Number(planForm.duration), 
-            expirationDate: planForm.expirationDate || undefined,
-            imageUrl: planForm.imageUrl || undefined 
-        };
-        if (editingPlan) await updateInvestmentPlan(editingPlan.id, p);
-        else await addInvestmentPlan(p);
-        setShowPlanModal(false);
-    };
-    const handlePrizeSave = async () => {
-        const p = { ...prizeForm, amount: Number(prizeForm.amount) };
-        if (editingPrize) await updateLuckyDrawPrize(editingPrize.id, p);
-        else await addLuckyDrawPrize(p);
-        setShowPrizeModal(false);
-    };
-    const handleCommentSave = async () => {
-        if (editingComment) await updateComment(editingComment.id, commentText);
-        setShowCommentModal(false);
-    };
-    const handleWinToggle = async (id: string) => {
-        const current = luckyDrawWinningPrizeIds || [];
-        const newIds = current.includes(id) ? current.filter((i: string) => i !== id) : [...current, id];
-        await setLuckyDrawWinningPrizes(newIds);
-    };
-    const handleSocialLinkAdd = async (platform: string, url: string) => {
-        if (!platform || !url) return;
-        const newLinks = { ...socialLinks, others: [...(socialLinks.others || []), { id: Date.now().toString(), platform, url }] };
-        await updateSocialLinks(newLinks);
-    };
-    const handleSocialLinkRemove = async (id: string) => {
-        const newLinks = { ...socialLinks, others: socialLinks.others.filter((l: SocialLinkItem) => l.id !== id) };
-        await updateSocialLinks(newLinks);
-    };
-    const handleDistribute = () => {
-        showConfirmation('Distribute Daily Earnings?', 'This will credit returns to all active investments. This action checks for payments made today to prevent double-paying.', async () => {
-             const result = await distributeDailyEarnings();
-             if(result.success) {
-                 // addNotification already handled in context
-             }
-        });
-    };
-    const handleEmployeeSave = async () => {
-        if (!employeeForm.name || !employeeForm.username) return;
-        if (editingEmployee) {
-            await updateEmployee(editingEmployee.id, employeeForm);
-        } else {
-            if (!employeeForm.password) {
-                addNotification('Password required for new employee', 'error');
-                return;
-            }
-            await addEmployee(employeeForm);
-        }
-        setShowEmployeeModal(false);
-    };
-
-    const allNavItems = [
+    const sidebarItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'financial', label: 'Financial Requests', icon: DollarSign },
-        { id: 'users', label: 'User Management', icon: Users },
-        { id: 'employees', label: 'Employee Management', icon: Shield },
-        { id: 'plans', label: 'Plan Management', icon: Briefcase },
-        { id: 'lucky_draw', label: 'Lucky Draw', icon: Gift },
-        { id: 'comments', label: 'User Comments', icon: MessageSquare },
-        { id: 'chat', label: 'Customer Support', icon: MessageSquare },
-        { id: 'logs', label: 'System Logs', icon: Activity },
-        { id: 'settings', label: 'Platform Settings', icon: Settings },
+        { id: 'financial', label: 'Financials', icon: TrendingUp },
+        { id: 'users', label: 'Users', icon: Users },
+        { id: 'plans', label: 'Plans', icon: Briefcase },
+        { id: 'lucky-draw', label: 'Lucky Draw', icon: Gift },
+        { id: 'comments', label: 'Comments', icon: MessageSquare },
+        { id: 'chat', label: 'Chat', icon: MessageSquare },
     ];
-
-    // Filter Navigation based on Role
-    const navItems = admin?.role === 'employee' 
-        ? allNavItems.filter(item => ['financial', 'chat'].includes(item.id)) 
-        : allNavItems;
+    
+    if (admin.role === 'admin') {
+        sidebarItems.push({ id: 'employees', label: 'Employees', icon: Shield });
+        sidebarItems.push({ id: 'logs', label: 'System Logs', icon: History });
+        sidebarItems.push({ id: 'settings', label: 'Settings', icon: Settings });
+    }
 
     const renderContent = () => {
-        // Guard clause for employee access
-        if (admin?.role === 'employee' && !['financial', 'chat'].includes(activeView)) {
-            return <div className="p-10 text-center text-gray-500">Access Denied</div>;
-        }
-
         switch (activeView) {
             case 'dashboard': return <DashboardView />;
-            case 'financial': return (
-                <FinancialManagementView 
-                    requests={financialRequests} 
-                    history={financialHistory} 
-                    users={users}
-                    onApprove={tx => showConfirmation(tx.type === 'withdrawal' ? 'Approve Withdrawal?' : 'Approve Deposit?', tx.type === 'withdrawal' ? 'This will mark the withdrawal as successful. Ensure you have sent the funds.' : 'This will credit the user balance.', async () => { await approveFinancialRequest(tx); fetchFinancialRequests(); fetchFinancialHistory(); })} 
-                    onReject={tx => showConfirmation('Reject/Delete Request?', 'This will reject the transaction and refund if withdrawal. It will then remove the request.', async () => { await rejectFinancialRequest(tx); fetchFinancialRequests(); fetchFinancialHistory(); })} 
-                    onViewProof={setViewingImage} 
-                    onDistribute={handleDistribute} 
-                />
-            );
-            case 'users': return <UserManagementView 
-                users={users} 
-                onEdit={u => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email, balance: u.balance }); setShowUserModal(true); }} 
-                onToggle={u => updateUser(u.id, { isActive: !u.isActive })} 
-                onDelete={id => showConfirmation('Delete?', 'Irreversible action.', () => deleteUser(id))} 
-                onLoginAs={loginAsUserFunc} 
-                onViewInvestments={(u) => { setSelectedUserInvestments(u); setShowInvestmentsModal(true); }}
-                onUninstall={(id) => showConfirmation('Uninstall App for User?', 'This will remotely wipe access for this user. They will see an "App Removed" screen.', () => uninstallUserApp(id))}
-                onRestore={(id) => showConfirmation('Restore App Access?', 'This will allow the user to access the app again.', () => restoreUserApp(id))}
-            />;
-            case 'employees': return <EmployeeManagementView 
-                employees={employees} 
-                onAdd={() => { setEditingEmployee(null); setEmployeeForm({ name: '', username: '', password: '', role: 'employee', isActive: true }); setShowEmployeeModal(true); }}
-                onEdit={e => { setEditingEmployee(e); setEmployeeForm({ name: e.name, username: e.username, password: '', role: e.role, isActive: e.isActive }); setShowEmployeeModal(true); }}
-                onDelete={id => showConfirmation('Delete Employee?', 'They will lose access immediately.', () => deleteEmployee(id))}
-            />;
-            case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={p => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={id => showConfirmation('Delete Plan?', 'Are you sure?', () => deleteInvestmentPlan(id))} />;
-            case 'lucky_draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={p => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type, amount: p.amount }); setShowPrizeModal(true); }} onDelete={id => deleteLuckyDrawPrize(id)} onToggleWin={handleWinToggle} />;
-            case 'comments': return <CommentsManagementView comments={comments} onDelete={id => deleteComment(id)} onEdit={c => { setEditingComment(c); setCommentText(c.text); setShowCommentModal(true); }} setViewingImage={setViewingImage} />;
-            case 'chat': return <AdminChatView sessions={chatSessions} activeId={activeChatUser} messages={chatSessions.find((s: ChatSession) => s.userId === activeChatUser)?.messages || []} onSelect={uid => { setActiveChatUser(uid); markChatAsRead(uid); }} onSend={(txt, img) => activeChatUser && sendChatMessage(activeChatUser, { text: txt, imageUrl: img })} />;
+            case 'financial': return <FinancialManagementView requests={financialRequests} history={financialHistory} users={users} onApprove={approveFinancialRequest} onReject={rejectFinancialRequest} onViewProof={setViewingImage} onDistribute={distributeDailyEarnings} />;
+            case 'users': return <UserManagementView users={users} onAdd={() => { setEditingUser(null); setUserForm({ name: '', phone: '', email: '', balance: 0, password: '' }); setShowUserModal(true); }} onEdit={(u) => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email || '', balance: u.balance, password: u.password || '' }); setShowUserModal(true); }} onToggle={(u) => updateUser(u.id, { isActive: !u.isActive })} onDelete={(id) => showConfirmation('Delete User?', 'This action cannot be undone.', () => deleteUser(id))} onLoginAs={loginAsUserFunc} onViewInvestments={setViewingUserInvestments} onUninstall={(id) => showConfirmation('Uninstall App?', 'Revoke access for this user?', () => uninstallUserApp(id))} onRestore={restoreUserApp} />;
+            case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={(p) => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={(id) => showConfirmation('Delete Plan?', 'Users will no longer be able to invest.', () => deleteInvestmentPlan(id))} />;
+            case 'lucky-draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={(p) => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type as any, amount: p.amount }); setShowPrizeModal(true); }} onDelete={(id) => showConfirmation('Delete Prize?', 'This prize will be removed.', () => deleteLuckyDrawPrize(id))} onToggleWin={(id) => { const newIds = luckyDrawWinningPrizeIds.includes(id) ? luckyDrawWinningPrizeIds.filter((i:any) => i !== id) : [...luckyDrawWinningPrizeIds, id]; setLuckyDrawWinningPrizes(newIds); }} />;
+            case 'comments': return <CommentsManagementView comments={comments} onDelete={(id) => showConfirmation('Delete Comment?', 'Are you sure?', () => deleteComment(id))} onEdit={(c) => { setEditingComment(c); setCommentText(c.text); setShowCommentModal(true); }} setViewingImage={setViewingImage} />;
+            case 'chat': return <AdminChatView sessions={chatSessions} onSelect={(uid) => { setActiveChatUser(uid); markChatAsRead(uid); }} activeId={activeChatUser} messages={activeChatUser ? (chatSessions.find((s:any) => s.userId === activeChatUser)?.messages || []) : []} onSend={(text, img) => { if (activeChatUser) sendChatMessage(activeChatUser, { text, imageUrl: img }); }} />;
+            case 'employees': return <EmployeeManagementView employees={employees} onAdd={() => { setEditingEmp(null); setEmpForm({ name: '', username: '', password: '', role: 'employee' }); setShowEmpModal(true); }} onEdit={(e) => { setEditingEmp(e); setEmpForm({ name: e.name, username: e.username, password: e.password || '', role: e.role }); setShowEmpModal(true); }} onDelete={(id) => showConfirmation('Delete Employee?', 'Access will be revoked.', () => deleteEmployee(id))} />;
             case 'logs': return <SystemLogsView logs={activityLog} />;
             case 'settings': return (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="bg-white p-6 rounded-lg shadow space-y-4">
-                        <h3 className="font-semibold text-lg">General Settings</h3>
-                        <div><label className="text-sm font-medium">App Name</label><div className="flex gap-2 mt-1"><input type="text" value={appName} onChange={e => updateAppName(e.target.value)} className="flex-1 border rounded px-3 py-2" /><button className="bg-blue-600 text-white px-4 rounded">Save</button></div></div>
-                        <div><label className="text-sm font-medium">App Logo</label><div className="flex items-center gap-4 mt-1">{appLogo && <img src={appLogo} className="w-12 h-12 rounded" />}<input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => updateAppLogo(ev.target?.result as string); r.readAsDataURL(f); } }} className="text-sm" /></div></div>
-                        <div><label className="text-sm font-medium">Theme Color</label><div className="flex gap-2 mt-2">{themeOptions.map(t => <button key={t.name} onClick={() => updateThemeColor(t.name)} className={`w-8 h-8 rounded-full ${t.bgClass} ${themeColor === t.name ? 'ring-2 ring-offset-2 ring-gray-800' : ''}`} />)}</div></div>
-                        <div><label className="text-sm font-medium">System Announcement</label><div className="flex gap-2 mt-1 items-start"><textarea value={noticeText} onChange={e => setNoticeText(e.target.value)} className="flex-1 border rounded px-3 py-2 h-24 resize-none" placeholder="Enter notice for users..." /><button onClick={() => updateSystemNotice(noticeText)} className="bg-blue-600 text-white px-4 py-2 h-fit rounded">Save</button></div><p className="text-xs text-gray-500 mt-1">This will appear as a popup to all users upon opening the app.</p></div>
-                        
-                        <div className="border-t pt-4 mt-4">
-                            <h3 className="font-semibold text-lg text-red-600 flex items-center gap-2"><AlertTriangle size={20}/> Danger Zone</h3>
-                            <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                                <h4 className="font-bold text-red-800 mb-1">Uninstall Application for ALL Users</h4>
-                                <p className="text-xs text-red-700 mb-3">This will immediately block access for every user on the platform. They will see an "App Removed" screen. This is reversible individually.</p>
-                                <button 
-                                    onClick={() => showConfirmation('UNINSTALL ALL APPS?', 'WARNING: This will remove the app from ALL user devices simultaneously. Are you absolutely sure?', () => uninstallAllUsersApps())}
-                                    className="w-full bg-red-600 text-white py-2 rounded font-bold hover:bg-red-700 flex items-center justify-center gap-2"
-                                >
-                                    <SmartphoneNfc size={18} /> Execute Global Uninstall
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div className="space-y-6">
-                        <div className="bg-white p-6 rounded-lg shadow space-y-4">
-                            <h3 className="font-semibold text-lg flex items-center gap-2"><Lock size={20}/> Security</h3>
-                            <div>
-                                <label className="text-sm font-medium">Change Your Password</label>
-                                <div className="mt-2 space-y-2">
-                                    <input 
-                                        type="password" 
-                                        placeholder="Current Password" 
-                                        className="w-full border rounded px-3 py-2 text-sm"
-                                        value={adminPassForm.old}
-                                        onChange={e => setAdminPassForm({...adminPassForm, old: e.target.value})}
-                                    />
-                                    <input 
-                                        type="password" 
-                                        placeholder="New Password" 
-                                        className="w-full border rounded px-3 py-2 text-sm"
-                                        value={adminPassForm.new}
-                                        onChange={e => setAdminPassForm({...adminPassForm, new: e.target.value})}
-                                    />
-                                    <button 
-                                        onClick={async () => {
-                                            if(!adminPassForm.old || !adminPassForm.new) return addNotification('Fill all fields', 'error');
-                                            const res = await changeAdminPassword(adminPassForm.old, adminPassForm.new);
-                                            if(res.success) {
-                                                setAdminPassForm({old: '', new: ''});
-                                            }
-                                        }}
-                                        className="w-full bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-gray-900 transition"
-                                    >
-                                        Update Password
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-white p-6 rounded-lg shadow space-y-4">
-                            <h3 className="font-semibold text-lg">Social Links</h3>
-                            <div><label className="text-sm font-medium">Telegram</label><input type="text" value={socialLinks.telegram || ''} onChange={e => updateSocialLinks({ ...socialLinks, telegram: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
-                            <div><label className="text-sm font-medium">WhatsApp</label><input type="text" value={socialLinks.whatsapp || ''} onChange={e => updateSocialLinks({ ...socialLinks, whatsapp: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
-                            <div className="border-t pt-4"><label className="text-sm font-medium">Custom Links</label>
-                                {socialLinks.others?.map((l: SocialLinkItem) => <div key={l.id} className="flex justify-between items-center bg-gray-50 p-2 rounded mt-2 text-sm"><span>{l.platform}</span><button onClick={() => handleSocialLinkRemove(l.id)} className="text-red-500"><X size={16}/></button></div>)}
-                                <form onSubmit={e => { e.preventDefault(); const t = e.target as any; handleSocialLinkAdd(t.p.value, t.u.value); t.reset(); }} className="flex gap-2 mt-2"><input name="p" placeholder="Name" className="flex-1 border rounded px-2 py-1" required /><input name="u" placeholder="URL" className="flex-1 border rounded px-2 py-1" required /><button className="bg-green-600 text-white px-3 rounded"><Plus size={18}/></button></form>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow space-y-6 lg:col-span-2">
-                        <div className="flex justify-between items-center border-b pb-4">
-                            <div>
-                                <h3 className="font-semibold text-lg text-gray-800">Payment Channels</h3>
-                                <p className="text-sm text-gray-500">Configure deposit methods for users</p>
-                            </div>
-                            <button 
-                                onClick={() => updatePaymentSettings({ 
-                                    paymentMethods: [...paymentSettings.paymentMethods, { 
-                                        id: Date.now().toString(), 
-                                        name: 'New Channel', 
-                                        upiId: '', 
-                                        qrCode: '', 
-                                        isActive: true 
-                                    }] 
-                                })} 
-                                className="bg-indigo-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-indigo-700 transition shadow-sm"
-                            >
-                                <Plus size={18} /> Add Method
-                            </button>
-                        </div>
-
+                <div className="bg-white rounded-lg shadow p-6 space-y-8">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                            {paymentSettings.paymentMethods.map((method: any, idx: number) => (
-                                <div key={method.id || idx} className="border border-gray-200 rounded-xl p-5 bg-gray-50 relative transition-all hover:shadow-md hover:bg-white hover:border-indigo-200 group">
-                                    
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${method.isActive ? 'bg-green-100 text-green-600' : 'bg-gray-200 text-gray-500'}`}>
-                                                {method.isActive ? <Check size={20} /> : <X size={20} />}
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Method Name</label>
-                                                <input 
-                                                    value={method.name} 
-                                                    onChange={e => { 
-                                                        const newMethods = [...paymentSettings.paymentMethods]; 
-                                                        newMethods[idx].name = e.target.value; 
-                                                        updatePaymentSettings({ paymentMethods: newMethods }); 
-                                                    }} 
-                                                    className="bg-transparent border-b border-dashed border-gray-300 focus:border-indigo-500 focus:outline-none font-semibold text-gray-800 placeholder-gray-400 w-48"
-                                                    placeholder="e.g. UPI Pay 1"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <label className="flex items-center cursor-pointer select-none gap-2 mr-2">
-                                                <span className="text-sm font-medium text-gray-500">{method.isActive ? 'Active' : 'Inactive'}</span>
-                                                <div className="relative">
-                                                    <input 
-                                                        type="checkbox" 
-                                                        className="sr-only" 
-                                                        checked={method.isActive} 
-                                                        onChange={() => { 
-                                                            const newMethods = [...paymentSettings.paymentMethods]; 
-                                                            newMethods[idx].isActive = !newMethods[idx].isActive; 
-                                                            updatePaymentSettings({ paymentMethods: newMethods }); 
-                                                        }} 
-                                                    />
-                                                    <div className={`block w-10 h-6 rounded-full transition ${method.isActive ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                                                    <div className={`dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition transform ${method.isActive ? 'translate-x-4' : 'translate-x-0'}`}></div>
-                                                </div>
-                                            </label>
-                                            <button 
-                                                onClick={() => {
-                                                    showConfirmation("Delete Payment Method?", "Are you sure you want to remove this payment channel?", () => {
-                                                        const newMethods = paymentSettings.paymentMethods.filter((_: any, i: number) => i !== idx);
-                                                        updatePaymentSettings({ paymentMethods: newMethods });
-                                                    });
-                                                }}
-                                                className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-full transition"
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div className="md:col-span-2 space-y-1">
-                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">UPI ID / Wallet Address</label>
-                                            <div className="relative">
-                                                <CreditCard size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                                                <input 
-                                                    value={method.upiId} 
-                                                    onChange={e => { 
-                                                        const newMethods = [...paymentSettings.paymentMethods]; 
-                                                        newMethods[idx].upiId = e.target.value; 
-                                                        updatePaymentSettings({ paymentMethods: newMethods }); 
-                                                    }} 
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm font-mono text-gray-700 shadow-sm"
-                                                    placeholder="Enter UPI ID (e.g. merchant@okicici)"
-                                                />
-                                            </div>
-                                            <p className="text-[10px] text-gray-400">Users will copy this ID to make payments.</p>
-                                        </div>
-
-                                        <div className="flex flex-col items-center">
-                                            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 self-start w-full text-center">QR Code</label>
-                                            <div className="relative group/qr cursor-pointer w-full">
-                                                <div className={`w-full h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden bg-white ${method.qrCode ? 'border-indigo-300' : 'border-gray-300 hover:border-indigo-400 hover:bg-indigo-50'}`}>
-                                                    {method.qrCode ? (
-                                                        <img src={method.qrCode} alt="QR" className="w-full h-full object-contain p-1" />
-                                                    ) : (
-                                                        <>
-                                                            <QrCode size={24} className="text-gray-400 mb-2" />
-                                                            <span className="text-xs text-gray-500 font-medium">Upload QR</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                
-                                                <div className="absolute inset-0 bg-black/0 group-hover/qr:bg-black/10 flex items-center justify-center transition-all rounded-lg">
-                                                    <input 
-                                                        type="file" 
-                                                        className="absolute inset-0 opacity-0 cursor-pointer" 
-                                                        accept="image/*"
-                                                        onChange={e => { 
-                                                            const f = e.target.files?.[0]; 
-                                                            if (f) { 
-                                                                const r = new FileReader(); 
-                                                                r.onload = ev => { 
-                                                                    const newMethods = [...paymentSettings.paymentMethods]; 
-                                                                    newMethods[idx].qrCode = ev.target?.result; 
-                                                                    updatePaymentSettings({ paymentMethods: newMethods }); 
-                                                                }; 
-                                                                r.readAsDataURL(f); 
-                                                            } 
-                                                        }} 
-                                                    />
-                                                </div>
-                                            </div>
-                                            {method.qrCode && (
-                                                <button 
-                                                    onClick={() => {
-                                                        const newMethods = [...paymentSettings.paymentMethods]; 
-                                                        newMethods[idx].qrCode = ''; 
-                                                        updatePaymentSettings({ paymentMethods: newMethods }); 
-                                                    }}
-                                                    className="text-xs text-red-500 mt-1 hover:underline"
-                                                >
-                                                    Remove QR
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
+                            <h3 className="font-bold border-b pb-2">App Config</h3>
+                            <div><label className="text-sm font-medium">App Name</label><input type="text" value={appName} onChange={e => updateAppName(e.target.value)} className="w-full border p-2 rounded mt-1" /></div>
+                            <div><label className="text-sm font-medium">App Logo URL</label><input type="text" value={appLogo || ''} onChange={e => updateAppLogo(e.target.value)} className="w-full border p-2 rounded mt-1" /></div>
+                            <div><label className="text-sm font-medium">Theme Color</label><div className="flex gap-2 mt-2">{themeOptions.map(t => <button key={t.name} onClick={() => updateThemeColor(t.name)} className={`w-8 h-8 rounded-full ${t.bgClass} ${themeColor === t.name ? 'ring-2 ring-offset-2 ring-gray-400' : ''}`} />)}</div></div>
+                            <div><label className="text-sm font-medium">System Notice</label><textarea value={noticeText} onChange={e => setNoticeText(e.target.value)} className="w-full border p-2 rounded mt-1 h-24" /><button onClick={() => updateSystemNotice(noticeText)} className="mt-2 bg-blue-600 text-white px-3 py-1 rounded text-sm">Update Notice</button></div>
+                        </div>
+                        <div className="space-y-4">
+                            <h3 className="font-bold border-b pb-2">Social Links</h3>
+                            <div><label className="text-sm font-medium">Telegram</label><input type="text" value={socialLinks.telegram} onChange={e => updateSocialLinks({ ...socialLinks, telegram: e.target.value })} className="w-full border p-2 rounded mt-1" /></div>
+                            <div><label className="text-sm font-medium">WhatsApp</label><input type="text" value={socialLinks.whatsapp} onChange={e => updateSocialLinks({ ...socialLinks, whatsapp: e.target.value })} className="w-full border p-2 rounded mt-1" /></div>
+                        </div>
+                    </div>
+                    <div className="border-t pt-6">
+                         <h3 className="font-bold mb-4">Payment Methods</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {paymentSettings.paymentMethods.map((m: any, idx: number) => (
+                                <div key={m.id} className="border p-4 rounded flex justify-between items-center">
+                                    <div><p className="font-bold">{m.name}</p><p className="text-xs text-gray-500">{m.upiId}</p></div>
+                                    <button onClick={() => { const newM = [...paymentSettings.paymentMethods]; newM.splice(idx, 1); updatePaymentSettings({ paymentMethods: newM }); }} className="text-red-500"><Trash2 size={16}/></button>
                                 </div>
                             ))}
-
-                            {paymentSettings.paymentMethods.length === 0 && (
-                                <div className="text-center py-10 bg-gray-50 rounded-xl border-2 border-dashed border-gray-300">
-                                    <div className="bg-white p-3 rounded-full inline-block mb-3 shadow-sm">
-                                        <Wallet size={24} className="text-gray-400" />
-                                    </div>
-                                    <p className="text-gray-500 font-medium">No payment channels active</p>
-                                    <p className="text-xs text-gray-400 mt-1">Add a channel to start accepting deposits</p>
-                                </div>
-                            )}
-                        </div>
+                         </div>
+                         <button onClick={() => { const newM = [...paymentSettings.paymentMethods, { id: Date.now().toString(), name: 'New Method', upiId: '', qrCode: '', isActive: true }]; updatePaymentSettings({ paymentMethods: newM }); }} className="mt-4 bg-green-500 text-white px-4 py-2 rounded text-sm">Add Method</button>
                     </div>
                 </div>
             );
-            default: return <div>Select a View</div>;
+            default: return null;
         }
     };
 
     return (
-        <div className="h-[100dvh] flex bg-gray-100 font-sans overflow-hidden text-gray-800">
+        <div className="min-h-screen bg-gray-100 flex">
             {viewingImage && <ImagePreviewModal imageUrl={viewingImage} onClose={() => setViewingImage(null)} />}
+            {viewingUserInvestments && <UserInvestmentsModal user={viewingUserInvestments} onClose={() => setViewingUserInvestments(null)} />}
             
-            {/* Modals */}
-            {showUserModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">Edit User</h3><input className="w-full border p-2 rounded mb-2" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} placeholder="Name" /><input className="w-full border p-2 rounded mb-2" value={userForm.phone} onChange={e => setUserForm({...userForm, phone: e.target.value})} placeholder="Phone" /><input className="w-full border p-2 rounded mb-2" value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} placeholder="Email" /><input className="w-full border p-2 rounded mb-4" type="number" value={userForm.balance} onChange={e => setUserForm({...userForm, balance: parseFloat(e.target.value)})} placeholder="Balance" /><div className="flex justify-end gap-2"><button onClick={() => setShowUserModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleUserSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
-            
-            {/* Employee Modal */}
-            {showEmployeeModal && (
+            {/* User Modal */}
+            {showUserModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white p-6 rounded-lg w-96">
-                        <h3 className="font-bold mb-4">{editingEmployee ? 'Edit Employee' : 'Add Employee'}</h3>
-                        <div className="space-y-3">
-                            <input className="w-full border p-2 rounded" value={employeeForm.name} onChange={e => setEmployeeForm({...employeeForm, name: e.target.value})} placeholder="Name" />
-                            <input className="w-full border p-2 rounded" value={employeeForm.username} onChange={e => setEmployeeForm({...employeeForm, username: e.target.value})} placeholder="Username" disabled={!!editingEmployee} />
-                            <input className="w-full border p-2 rounded" type="password" value={employeeForm.password} onChange={e => setEmployeeForm({...employeeForm, password: e.target.value})} placeholder={editingEmployee ? "New Password (Optional)" : "Password"} />
-                            <select className="w-full border p-2 rounded" value={employeeForm.role} onChange={e => setEmployeeForm({...employeeForm, role: e.target.value as any})}>
-                                <option value="admin">Admin</option>
-                                <option value="employee">Employee</option>
-                            </select>
-                            <label className="flex items-center gap-2">
-                                <input type="checkbox" checked={employeeForm.isActive} onChange={e => setEmployeeForm({...employeeForm, isActive: e.target.checked})} />
-                                <span>Active</span>
-                            </label>
-                        </div>
-                        <div className="flex justify-end gap-2 mt-4">
-                            <button onClick={() => setShowEmployeeModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
-                            <button onClick={handleEmployeeSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                    <div className="bg-white p-6 rounded-lg w-96 space-y-4">
+                        <h3 className="font-bold">{editingUser ? 'Edit User' : 'Add User'}</h3>
+                        <input placeholder="Name" value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Phone" value={userForm.phone} onChange={e => setUserForm({...userForm, phone: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Password" value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full border p-2 rounded" />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setShowUserModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                            <button onClick={() => { editingUser ? updateUser(editingUser.id, userForm) : addUser(userForm); setShowUserModal(false); }} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {showPlanModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white p-6 rounded-lg w-96 max-h-[90vh] overflow-y-auto">
-                    <h3 className="font-bold mb-4">{editingPlan ? 'Edit' : 'Add'} Plan</h3>
-                    <div className="mb-4">
-                        <label className="text-xs text-gray-500 block mb-1">Plan Image</label>
-                        <div className="relative h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center overflow-hidden group cursor-pointer transition-colors hover:bg-gray-50 hover:border-blue-400">
-                            {planForm.imageUrl ? (
-                                <>
-                                    <img src={planForm.imageUrl} alt="Plan" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <div className="text-center text-white">
-                                            <ImageIcon size={24} className="mx-auto mb-1" />
-                                            <span className="text-xs font-bold">Click to Change</span>
-                                        </div>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-center text-gray-400 p-4">
-                                    <div className="bg-white p-2 rounded-full inline-block shadow-sm mb-2">
-                                        <ImageIcon size={24} className="text-blue-500" />
-                                    </div>
-                                    <p className="text-xs font-medium text-gray-600">Click to Upload Image</p>
-                                    <p className="text-xs text-gray-400 mt-1">Supports JPG, PNG</p>
-                                </div>
-                            )}
-                            <input 
-                                type="file" 
-                                className="absolute inset-0 opacity-0 cursor-pointer" 
-                                accept="image/*"
-                                onChange={e => { 
-                                    const f = e.target.files?.[0]; 
-                                    if (f) { 
-                                        const r = new FileReader(); 
-                                        r.onload = ev => {
-                                            setPlanForm(prev => ({...prev, imageUrl: ev.target?.result as string}));
-                                        }; 
-                                        r.readAsDataURL(f); 
-                                    }
-                                    // Reset input value so same file can be selected again if needed
-                                    e.target.value = '';
-                                }} 
-                            />
+            {/* Plan Modal */}
+            {showPlanModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-96 space-y-4 max-h-[90vh] overflow-y-auto">
+                        <h3 className="font-bold">{editingPlan ? 'Edit Plan' : 'Add Plan'}</h3>
+                        <input placeholder="Name" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Image URL" value={planForm.imageUrl} onChange={e => setPlanForm({...planForm, imageUrl: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Min Investment" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Daily Return" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Duration (Days)" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Category" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} className="w-full border p-2 rounded" />
+                         <input placeholder="Expiration (Optional)" type="date" value={planForm.expirationDate ? planForm.expirationDate.split('T')[0] : ''} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} className="w-full border p-2 rounded" />
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setShowPlanModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                            <button onClick={() => { 
+                                const p = { ...planForm, minInvestment: Number(planForm.minInvestment), dailyReturn: Number(planForm.dailyReturn), duration: Number(planForm.duration) };
+                                editingPlan ? updateInvestmentPlan(editingPlan.id, p) : addInvestmentPlan(p); setShowPlanModal(false); 
+                            }} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
                         </div>
-                        {planForm.imageUrl && (
-                            <button 
-                                onClick={() => setPlanForm(prev => ({...prev, imageUrl: ''}))} 
-                                className="text-xs text-red-500 mt-2 flex items-center gap-1 hover:underline ml-1"
-                            >
-                                <Trash2 size={12} /> Remove Image
-                            </button>
-                        )}
-                    </div>
-                    <div className="space-y-3">
-                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" value={planForm.name} onChange={e => setPlanForm({...planForm, name: e.target.value})} placeholder="Plan Name" />
-                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.minInvestment} onChange={e => setPlanForm({...planForm, minInvestment: e.target.value})} placeholder="Min Investment" />
-                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.dailyReturn} onChange={e => setPlanForm({...planForm, dailyReturn: e.target.value})} placeholder="Daily Return" />
-                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="number" value={planForm.duration} onChange={e => setPlanForm({...planForm, duration: e.target.value})} placeholder="Duration (Days)" />
-                        <input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" value={planForm.category} onChange={e => setPlanForm({...planForm, category: e.target.value})} placeholder="Category (e.g. VIP)" />
-                        <div><label className="text-xs text-gray-500 block mb-1">Expiration (Optional)</label><input className="w-full border p-2 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none" type="datetime-local" value={planForm.expirationDate} onChange={e => setPlanForm({...planForm, expirationDate: e.target.value})} /></div>
-                    </div>
-                    <div className="flex justify-end gap-2 mt-6 border-t pt-4">
-                        <button onClick={() => setShowPlanModal(false)} className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 font-medium">Cancel</button>
-                        <button onClick={handlePlanSave} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium">Save Plan</button>
                     </div>
                 </div>
-            </div>}
+            )}
             
-            {showPrizeModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">{editingPrize ? 'Edit' : 'Add'} Prize</h3><input className="w-full border p-2 rounded mb-2" value={prizeForm.name} onChange={e => setPrizeForm({...prizeForm, name: e.target.value})} placeholder="Prize Name" /><select className="w-full border p-2 rounded mb-2" value={prizeForm.type} onChange={e => setPrizeForm({...prizeForm, type: e.target.value as any})}><option value="money">Money</option><option value="bonus">Bonus</option><option value="physical">Physical</option><option value="nothing">Nothing</option></select><input className="w-full border p-2 rounded mb-4" type="number" value={prizeForm.amount} onChange={e => setPrizeForm({...prizeForm, amount: parseFloat(e.target.value)})} placeholder="Amount/Value" /><div className="flex justify-end gap-2"><button onClick={() => setShowPrizeModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handlePrizeSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
-            {showCommentModal && <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg w-96"><h3 className="font-bold mb-4">Edit Comment</h3><textarea className="w-full border p-2 rounded mb-4 h-32" value={commentText} onChange={e => setCommentText(e.target.value)} /><div className="flex justify-end gap-2"><button onClick={() => setShowCommentModal(false)} className="px-4 py-2 bg-gray-200 rounded">Cancel</button><button onClick={handleCommentSave} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button></div></div></div>}
-            {showInvestmentsModal && selectedUserInvestments && <UserInvestmentsModal user={selectedUserInvestments} onClose={() => setShowInvestmentsModal(false)} />}
-
-            <aside className={`fixed md:relative z-40 w-64 h-full bg-slate-900 text-slate-300 flex flex-col shrink-0 transition-transform duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
-                <div className="h-16 flex items-center justify-center text-white text-xl font-bold border-b border-slate-800 tracking-wider">{appName}</div>
-                <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
-                    {navItems.map(item => (
-                        <button key={item.id} onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${activeView === item.id ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <item.icon size={20} /><span>{item.label}</span>
+            {/* Sidebar */}
+            <div className={`fixed inset-y-0 left-0 bg-gray-900 text-white w-64 transform transition-transform duration-200 z-30 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0`}>
+                <div className="p-6 border-b border-gray-800 flex justify-between items-center">
+                    <h1 className="text-xl font-bold">{appName} Admin</h1>
+                    <button onClick={() => setIsSidebarOpen(false)} className="md:hidden"><X size={24} /></button>
+                </div>
+                <nav className="p-4 space-y-2">
+                    {sidebarItems.map(item => (
+                        <button key={item.id} onClick={() => { setActiveView(item.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400 hover:bg-gray-800 hover:text-white'}`}>
+                            <item.icon size={20} />
+                            <span>{item.label}</span>
                         </button>
                     ))}
+                    <button onClick={adminLogout} className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-500 mt-8">
+                        <LogOut size={20} />
+                        <span>Logout</span>
+                    </button>
                 </nav>
-                <div className="p-4 border-t border-slate-800"><button onClick={adminLogout} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg hover:bg-red-600 hover:text-white transition-colors"><LogOut size={20} /> Logout</button></div>
-            </aside>
+            </div>
 
-            <div className="flex-1 flex flex-col overflow-hidden w-full">
-                <header className="h-16 bg-white border-b border-gray-200 flex items-center px-4 justify-between shrink-0 shadow-sm z-10">
-                    <div className="flex items-center gap-3">
-                        <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"><Menu size={24} /></button>
-                        <h1 className="text-xl font-semibold text-gray-800">{navItems.find(i => i.id === activeView)?.label || 'Panel'}</h1>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-gray-500">
-                            {admin?.role === 'employee' ? 'Employee' : 'Admin'}
-                        </span>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${admin?.role === 'employee' ? 'bg-orange-500' : 'bg-blue-600'}`}>
-                            {admin?.role === 'employee' ? 'E' : 'A'}
+            {/* Main Content */}
+            <div className="flex-1 flex flex-col h-screen overflow-hidden">
+                <header className="bg-white shadow-sm p-4 flex justify-between items-center z-20">
+                    <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2"><Menu size={24} /></button>
+                    <h2 className="text-xl font-semibold capitalize text-gray-800 ml-2 md:ml-0">{activeView.replace('-', ' ')}</h2>
+                    <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                            <p className="text-sm font-bold text-gray-900">Admin</p>
+                            <p className="text-xs text-green-500">Online</p>
                         </div>
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold">A</div>
                     </div>
                 </header>
-                <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-100">{renderContent()}</main>
+                <main className="flex-1 overflow-auto p-6">
+                    {renderContent()}
+                </main>
             </div>
         </div>
     );

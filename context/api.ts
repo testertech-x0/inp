@@ -61,7 +61,7 @@ export const register = async (data: { name: string; phone: string; password: st
         phone: data.phone,
         password: data.password, // In real app, hash this!
         name: data.name,
-        email: `u${data.phone}@wealthapp.com`,
+        // email removed as per request
         balance: 0,
         totalReturns: 0,
         rechargeAmount: 0,
@@ -221,6 +221,51 @@ export const fetchUserProfile = async () => {
 export const fetchAllUsers = async () => {
     await delay(200);
     return getStorage<User[]>(STORAGE_KEYS.USERS, []);
+};
+
+export const addUser = async (userData: { name: string; phone: string; password: string; balance?: number; email?: string }) => {
+    await delay();
+    const users = getStorage<User[]>(STORAGE_KEYS.USERS, []);
+    if (users.find(u => u.phone === userData.phone)) {
+        throw new Error("Phone number already exists");
+    }
+
+    const newUser: User = {
+        id: Date.now().toString(),
+        phone: userData.phone,
+        password: userData.password,
+        name: userData.name,
+        email: userData.email, // Use provided email or undefined
+        balance: userData.balance || 0,
+        totalReturns: 0,
+        rechargeAmount: 0,
+        withdrawals: 0,
+        registrationDate: new Date().toISOString(),
+        isActive: true,
+        isAppUninstalled: false,
+        investments: [],
+        transactions: [{
+             id: Date.now().toString(),
+             type: 'system',
+             amount: 0,
+             description: 'Welcome to Wealth Fund!',
+             date: new Date().toISOString(),
+             read: false,
+             status: 'success'
+        }],
+        loginActivity: [],
+        bankAccount: null,
+        luckyDrawChances: 1,
+        checkInStreak: 0,
+        language: 'en',
+        referralCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
+        teamIncome: 0
+    };
+
+    users.push(newUser);
+    setStorage(STORAGE_KEYS.USERS, users);
+    await logActivity('ADMIN', 'Admin', `Added new user: ${newUser.name}`);
+    return { success: true, user: newUser };
 };
 
 export const updateUserProfile = async (updates: Partial<User>) => {

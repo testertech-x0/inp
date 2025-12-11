@@ -41,7 +41,7 @@ export interface User {
   phone: string;
   password?: string; 
   name: string;
-  email: string;
+  email?: string;
   avatar?: string | null;
   balance: number;
   totalReturns: number;
@@ -224,6 +224,7 @@ export interface AppContextType {
   loginAsUserFunc: (userId: string) => Promise<void>;
   returnToAdmin: () => Promise<void>;
   fetchAllUsers: () => Promise<void>;
+  addUser: (userData: any) => Promise<{ success: boolean; message?: string }>; // Added
   updateUser: (userId: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
   investInPlan: (planId: string, quantity: number) => Promise<{ success: boolean; message: string }>;
