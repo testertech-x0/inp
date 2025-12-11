@@ -140,6 +140,8 @@ export const adminLogin = async (username: string, password: string) => {
 
     if (account) {
         if (!account.isActive) throw new Error("Account suspended");
+        // Store the username in localStorage to identify which admin is logged in
+        localStorage.setItem('admin_username', username);
         return { success: true, token: `admin_token_${account.id}`, role: account.role };
     }
 
@@ -774,7 +776,24 @@ export const updateFundPassword = async (userId: string, newPass: string) => {
 export const markNotificationsAsRead = async () => { 
     return { success: true, user: await fetchUserProfile() }; 
 };
-export const changeAdminPassword = async (oldPass: string, newPass: string) => ({ success: true });
+
+export const changeAdminPassword = async (oldPass: string, newPass: string) => {
+    await delay();
+    const employees = getStorage<Employee[]>(STORAGE_KEYS.EMPLOYEES, INITIAL_EMPLOYEES);
+    // Find the currently logged in admin (using a simple localStorage hack for mock state consistency, or fallback to 'admin')
+    const currentUsername = localStorage.getItem('admin_username') || 'admin';
+    const index = employees.findIndex(e => e.username === currentUsername);
+
+    if (index !== -1) {
+        if (employees[index].password !== oldPass) {
+            throw new Error("Incorrect current password");
+        }
+        employees[index].password = newPass;
+        setStorage(STORAGE_KEYS.EMPLOYEES, employees);
+        return { success: true };
+    }
+    throw new Error("Admin user not found");
+};
 
 export const performDailyCheckIn = async () => {
      await delay(300);

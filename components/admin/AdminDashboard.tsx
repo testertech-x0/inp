@@ -541,14 +541,18 @@ const EmployeeManagementView: FC<{
                                 </span>
                             </td>
                             <td className="px-6 py-4 text-right">
-                                <div className="flex justify-end gap-2">
-                                    <button onClick={() => onEdit(emp)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit">
-                                        <Edit size={16} />
-                                    </button>
-                                    <button onClick={() => onDelete(emp.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete">
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
+                                {emp.username === 'admin' ? (
+                                    <span className="text-xs text-gray-400 italic">Super Admin</span>
+                                ) : (
+                                    <div className="flex justify-end gap-2">
+                                        <button onClick={() => onEdit(emp)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" title="Edit">
+                                            <Edit size={16} />
+                                        </button>
+                                        <button onClick={() => onDelete(emp.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Delete">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                )}
                             </td>
                         </tr>
                     ))}
@@ -609,6 +613,9 @@ const AdminDashboard: React.FC = () => {
     const [showEmployeeModal, setShowEmployeeModal] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
     const [employeeForm, setEmployeeForm] = useState({ name: '', username: '', password: '', role: 'employee', isActive: true });
+    
+    // Admin Password Change State
+    const [adminPassForm, setAdminPassForm] = useState({ old: '', new: '' });
 
     // Data Fetching
     useEffect(() => {
@@ -771,15 +778,54 @@ const AdminDashboard: React.FC = () => {
                             </div>
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-lg shadow space-y-4">
-                        <h3 className="font-semibold text-lg">Social Links</h3>
-                        <div><label className="text-sm font-medium">Telegram</label><input type="text" value={socialLinks.telegram || ''} onChange={e => updateSocialLinks({ ...socialLinks, telegram: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
-                        <div><label className="text-sm font-medium">WhatsApp</label><input type="text" value={socialLinks.whatsapp || ''} onChange={e => updateSocialLinks({ ...socialLinks, whatsapp: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
-                        <div className="border-t pt-4"><label className="text-sm font-medium">Custom Links</label>
-                            {socialLinks.others?.map((l: SocialLinkItem) => <div key={l.id} className="flex justify-between items-center bg-gray-50 p-2 rounded mt-2 text-sm"><span>{l.platform}</span><button onClick={() => handleSocialLinkRemove(l.id)} className="text-red-500"><X size={16}/></button></div>)}
-                            <form onSubmit={e => { e.preventDefault(); const t = e.target as any; handleSocialLinkAdd(t.p.value, t.u.value); t.reset(); }} className="flex gap-2 mt-2"><input name="p" placeholder="Name" className="flex-1 border rounded px-2 py-1" required /><input name="u" placeholder="URL" className="flex-1 border rounded px-2 py-1" required /><button className="bg-green-600 text-white px-3 rounded"><Plus size={18}/></button></form>
+                    
+                    <div className="space-y-6">
+                        <div className="bg-white p-6 rounded-lg shadow space-y-4">
+                            <h3 className="font-semibold text-lg flex items-center gap-2"><Lock size={20}/> Security</h3>
+                            <div>
+                                <label className="text-sm font-medium">Change Your Password</label>
+                                <div className="mt-2 space-y-2">
+                                    <input 
+                                        type="password" 
+                                        placeholder="Current Password" 
+                                        className="w-full border rounded px-3 py-2 text-sm"
+                                        value={adminPassForm.old}
+                                        onChange={e => setAdminPassForm({...adminPassForm, old: e.target.value})}
+                                    />
+                                    <input 
+                                        type="password" 
+                                        placeholder="New Password" 
+                                        className="w-full border rounded px-3 py-2 text-sm"
+                                        value={adminPassForm.new}
+                                        onChange={e => setAdminPassForm({...adminPassForm, new: e.target.value})}
+                                    />
+                                    <button 
+                                        onClick={async () => {
+                                            if(!adminPassForm.old || !adminPassForm.new) return addNotification('Fill all fields', 'error');
+                                            const res = await changeAdminPassword(adminPassForm.old, adminPassForm.new);
+                                            if(res.success) {
+                                                setAdminPassForm({old: '', new: ''});
+                                            }
+                                        }}
+                                        className="w-full bg-gray-800 text-white px-4 py-2 rounded text-sm hover:bg-gray-900 transition"
+                                    >
+                                        Update Password
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-lg shadow space-y-4">
+                            <h3 className="font-semibold text-lg">Social Links</h3>
+                            <div><label className="text-sm font-medium">Telegram</label><input type="text" value={socialLinks.telegram || ''} onChange={e => updateSocialLinks({ ...socialLinks, telegram: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
+                            <div><label className="text-sm font-medium">WhatsApp</label><input type="text" value={socialLinks.whatsapp || ''} onChange={e => updateSocialLinks({ ...socialLinks, whatsapp: e.target.value })} className="w-full border rounded px-3 py-2 mt-1" /></div>
+                            <div className="border-t pt-4"><label className="text-sm font-medium">Custom Links</label>
+                                {socialLinks.others?.map((l: SocialLinkItem) => <div key={l.id} className="flex justify-between items-center bg-gray-50 p-2 rounded mt-2 text-sm"><span>{l.platform}</span><button onClick={() => handleSocialLinkRemove(l.id)} className="text-red-500"><X size={16}/></button></div>)}
+                                <form onSubmit={e => { e.preventDefault(); const t = e.target as any; handleSocialLinkAdd(t.p.value, t.u.value); t.reset(); }} className="flex gap-2 mt-2"><input name="p" placeholder="Name" className="flex-1 border rounded px-2 py-1" required /><input name="u" placeholder="URL" className="flex-1 border rounded px-2 py-1" required /><button className="bg-green-600 text-white px-3 rounded"><Plus size={18}/></button></form>
+                            </div>
                         </div>
                     </div>
+
                     <div className="bg-white p-6 rounded-lg shadow space-y-6 lg:col-span-2">
                         <div className="flex justify-between items-center border-b pb-4">
                             <div>
@@ -999,7 +1045,7 @@ const AdminDashboard: React.FC = () => {
                                         <ImageIcon size={24} className="text-blue-500" />
                                     </div>
                                     <p className="text-xs font-medium text-gray-600">Click to Upload Image</p>
-                                    <p className="text-[10px] text-gray-400 mt-1">Supports JPG, PNG</p>
+                                    <p className="text-xs text-gray-400 mt-1">Supports JPG, PNG</p>
                                 </div>
                             )}
                             <input 
