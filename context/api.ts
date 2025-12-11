@@ -622,7 +622,7 @@ export const fetchPlatformSettings = async () => {
         paymentSettings: { paymentMethods: [], quickAmounts: [500, 1000, 5000] },
         luckyDrawPrizes: INITIAL_PRIZES,
         luckyDrawWinningPrizeIds: [],
-        systemNotice: 'Welcome to the Mock Version!'
+        systemNotice: 'Welcome to the Wealth Fund Investment'
     });
 };
 
