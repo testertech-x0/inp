@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, FC } from 'react';
-import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock, UserPlus } from 'lucide-react';
+import { LogOut, Users, Activity, TrendingUp, Wallet, Search, Edit, Eye, Trash2, X, FileText, Briefcase, Plus, Settings, Check, Crop, LogIn, Shield, UserCheck, UserX, Camera, MessageSquare, Paperclip, Send, Share2, Gift, CreditCard, QrCode, LayoutDashboard, Palette, Target, Menu, Link, Globe, DollarSign, Calendar, Download, Smartphone, History, Landmark, Image as ImageIcon, AlertTriangle, SmartphoneNfc, RefreshCw, Lock, UserPlus, ArrowDownCircle, ArrowUpCircle, Bell } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import type { User, InvestmentPlan, ThemeColor, Transaction, LoginActivity, Investment, ChatMessage, SocialLinks, Prize, Comment, SocialLinkItem, ChatSession, ActivityLogEntry, Employee } from '../../types';
 import * as api from '../../context/api';
@@ -23,9 +23,16 @@ const ImagePreviewModal: FC<{ imageUrl: string; onClose: () => void }> = ({ imag
 
 // --- SUB-COMPONENTS ---
 
-const DashboardView: FC = () => {
+const DashboardView: FC<{ requests: Transaction[], role: 'admin' | 'employee' }> = ({ requests, role }) => {
     const [stats, setStats] = useState({ totalUsers: 0, activeUsers: 0, totalInvestments: 0, platformBalance: 0 });
     
+    // Calculate Stats for Employee View
+    const pendingDeposits = requests.filter(r => r.type === 'deposit' && r.status === 'pending');
+    const pendingWithdrawals = requests.filter(r => r.type === 'withdrawal' && r.status === 'pending');
+    
+    const pendingDepositAmount = pendingDeposits.reduce((acc, curr) => acc + curr.amount, 0);
+    const pendingWithdrawalAmount = pendingWithdrawals.reduce((acc, curr) => acc + Math.abs(curr.amount), 0);
+
     useEffect(() => {
         const loadStats = async () => {
              try {
@@ -35,8 +42,34 @@ const DashboardView: FC = () => {
                  console.error("Failed to load stats", e);
              }
         };
-        loadStats();
-    }, []);
+        if (role === 'admin') loadStats();
+    }, [role]);
+
+    if (role === 'employee') {
+        return (
+            <div className="space-y-6">
+                <h2 className="text-2xl font-bold text-gray-800">Financial Tasks Overview</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-green-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">New Deposits</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-1">{pendingDeposits.length}</p>
+                            <p className="text-xs text-green-600 mt-1">Total: ₹{pendingDepositAmount.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-green-50 p-3 rounded-lg"><ArrowDownCircle className="text-green-600" size={24} /></div>
+                    </div>
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-red-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium">New Withdrawals</p>
+                            <p className="text-3xl font-bold text-gray-800 mt-1">{pendingWithdrawals.length}</p>
+                            <p className="text-xs text-red-600 mt-1">Total: ₹{pendingWithdrawalAmount.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-red-50 p-3 rounded-lg"><ArrowUpCircle className="text-red-600" size={24} /></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
@@ -366,6 +399,48 @@ const AdminChatView: FC<{ sessions: ChatSession[], onSelect: (uid: string) => vo
     );
 };
 
+const EmployeeChatView: FC<{ username: string, session: ChatSession | undefined, onSend: (text: string, img?: string) => void }> = ({ username, session, onSend }) => {
+    const [text, setText] = useState('');
+    const [img, setImg] = useState<string | null>(null);
+    const fileRef = useRef<HTMLInputElement>(null);
+    const bottomRef = useRef<HTMLDivElement>(null);
+    
+    const messages = session?.messages || [];
+    
+    useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+    return (
+        <div className="bg-white rounded-lg shadow flex flex-col h-[600px]">
+            <div className="p-4 border-b font-semibold bg-gray-50 flex justify-between items-center">
+                <span>Chat with Super Admin</span>
+                <div className="text-xs text-gray-500">You are logged in as: {username}</div>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                {messages.length === 0 && <div className="text-center text-gray-400 py-10">No messages yet. Start chatting with Admin.</div>}
+                {messages.map(m => (
+                    <div key={m.id} className={`flex ${m.senderId === username ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[70%] p-3 rounded-lg ${m.senderId === username ? 'bg-blue-600 text-white rounded-br-none' : 'bg-white border rounded-bl-none'}`}>
+                            {m.text && <p className="text-sm">{m.text}</p>}
+                            {m.imageUrl && <img src={m.imageUrl} className="mt-2 rounded max-h-40" alt="attachment" />}
+                            <p className={`text-[10px] mt-1 text-right ${m.senderId === username ? 'text-blue-100' : 'text-gray-400'}`}>{new Date(m.timestamp).toLocaleTimeString()}</p>
+                        </div>
+                    </div>
+                ))}
+                <div ref={bottomRef} />
+            </div>
+            <div className="p-4 border-t bg-white">
+                {img && <div className="mb-2 flex items-center gap-2 bg-gray-100 p-2 rounded w-fit"><span className="text-xs">Image attached</span><button onClick={() => setImg(null)}><X size={14}/></button></div>}
+                <div className="flex gap-2">
+                    <button onClick={() => fileRef.current?.click()} className="p-2 text-gray-500 hover:bg-gray-100 rounded"><Paperclip size={20} /></button>
+                    <input type="file" ref={fileRef} className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setImg(ev.target?.result as string); r.readAsDataURL(f); } }} />
+                    <input type="text" value={text} onChange={e => setText(e.target.value)} onKeyPress={e => e.key === 'Enter' && !e.shiftKey && (text || img) && (onSend(text, img || undefined), setText(''), setImg(null))} className="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a message..." />
+                    <button onClick={() => (text || img) && (onSend(text, img || undefined), setText(''), setImg(null))} className="p-2 bg-blue-600 text-white rounded-full hover:bg-blue-700"><Send size={20} /></button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CommentsManagementView: FC<{ comments: Comment[], onDelete: (id: string) => void, onEdit: (comment: Comment) => void, setViewingImage: (url: string) => void }> = ({ comments, onDelete, onEdit, setViewingImage }) => (
     <div className="bg-white rounded-lg shadow">
         <div className="p-6 border-b"><h2 className="text-xl font-semibold text-gray-800">User Comments</h2></div>
@@ -489,6 +564,8 @@ const AdminDashboard: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [viewingImage, setViewingImage] = useState<string | null>(null);
     const [viewingUserInvestments, setViewingUserInvestments] = useState<User | null>(null);
+    const [showNotifDropdown, setShowNotifDropdown] = useState(false);
+    const notifRef = useRef<HTMLDivElement>(null);
     
     // Modals State
     const [showUserModal, setShowUserModal] = useState(false);
@@ -523,31 +600,64 @@ const AdminDashboard: React.FC = () => {
         if (admin.role === 'admin') fetchEmployees();
     }, []);
 
+    // Close notification dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: any) => {
+            if (notifRef.current && !notifRef.current.contains(event.target)) {
+                setShowNotifDropdown(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    // Calculate notifications
+    const pDep = financialRequests.filter((r: any) => r.type === 'deposit' && r.status === 'pending').length;
+    const pWit = financialRequests.filter((r: any) => r.type === 'withdrawal' && r.status === 'pending').length;
+    
+    let chatCount = 0;
+    if (admin.role === 'admin') {
+        chatCount = chatSessions.reduce((acc: number, s: any) => acc + (s.adminUnreadCount || 0), 0);
+    } else {
+        // Employee looking for messages from Admin
+        const mySession = chatSessions.find((s:any) => s.userId === admin.username);
+        chatCount = mySession?.userUnreadCount || 0;
+    }
+
+    const totalNotifs = pDep + pWit + chatCount;
+
     const sidebarItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'financial', label: 'Financials', icon: TrendingUp },
-        { id: 'users', label: 'Users', icon: Users },
-        { id: 'plans', label: 'Plans', icon: Briefcase },
-        { id: 'lucky-draw', label: 'Lucky Draw', icon: Gift },
-        { id: 'comments', label: 'Comments', icon: MessageSquare },
-        { id: 'chat', label: 'Chat', icon: MessageSquare },
     ];
-    
+
+    if (admin.role === 'employee') {
+        sidebarItems.push({ id: 'admin-chat', label: 'Chat with Admin', icon: MessageSquare });
+    }
+
     if (admin.role === 'admin') {
-        sidebarItems.push({ id: 'employees', label: 'Employees', icon: Shield });
-        sidebarItems.push({ id: 'logs', label: 'System Logs', icon: History });
-        sidebarItems.push({ id: 'settings', label: 'Settings', icon: Settings });
+        sidebarItems.push(
+            { id: 'users', label: 'Users', icon: Users },
+            { id: 'plans', label: 'Plans', icon: Briefcase },
+            { id: 'lucky-draw', label: 'Lucky Draw', icon: Gift },
+            { id: 'comments', label: 'Comments', icon: MessageSquare },
+            { id: 'chat', label: 'Chat', icon: MessageSquare },
+            { id: 'employees', label: 'Employees', icon: Shield },
+            { id: 'logs', label: 'System Logs', icon: History },
+            { id: 'settings', label: 'Settings', icon: Settings }
+        );
     }
 
     const renderContent = () => {
         switch (activeView) {
-            case 'dashboard': return <DashboardView />;
+            case 'dashboard': return <DashboardView requests={financialRequests} role={admin.role} />;
             case 'financial': return <FinancialManagementView requests={financialRequests} history={financialHistory} users={users} onApprove={approveFinancialRequest} onReject={rejectFinancialRequest} onViewProof={setViewingImage} onDistribute={distributeDailyEarnings} />;
             case 'users': return <UserManagementView users={users} onAdd={() => { setEditingUser(null); setUserForm({ name: '', phone: '', email: '', balance: 0, password: '' }); setShowUserModal(true); }} onEdit={(u) => { setEditingUser(u); setUserForm({ name: u.name, phone: u.phone, email: u.email || '', balance: u.balance, password: u.password || '' }); setShowUserModal(true); }} onToggle={(u) => updateUser(u.id, { isActive: !u.isActive })} onDelete={(id) => showConfirmation('Delete User?', 'This action cannot be undone.', () => deleteUser(id))} onLoginAs={loginAsUserFunc} onViewInvestments={setViewingUserInvestments} onUninstall={(id) => showConfirmation('Uninstall App?', 'Revoke access for this user?', () => uninstallUserApp(id))} onRestore={restoreUserApp} />;
             case 'plans': return <PlanManagementView plans={investmentPlans} onAdd={() => { setEditingPlan(null); setPlanForm({ name: '', imageUrl: '', minInvestment: '', dailyReturn: '', duration: '', category: '', expirationDate: '' }); setShowPlanModal(true); }} onEdit={(p) => { setEditingPlan(p); setPlanForm({ name: p.name, imageUrl: p.imageUrl || '', minInvestment: String(p.minInvestment), dailyReturn: String(p.dailyReturn), duration: String(p.duration), category: p.category, expirationDate: p.expirationDate || '' }); setShowPlanModal(true); }} onDelete={(id) => showConfirmation('Delete Plan?', 'Users will no longer be able to invest.', () => deleteInvestmentPlan(id))} />;
             case 'lucky-draw': return <LuckyDrawView prizes={luckyDrawPrizes} winningIds={luckyDrawWinningPrizeIds} onAdd={() => { setEditingPrize(null); setPrizeForm({ name: '', type: 'money', amount: 0 }); setShowPrizeModal(true); }} onEdit={(p) => { setEditingPrize(p); setPrizeForm({ name: p.name, type: p.type as any, amount: p.amount }); setShowPrizeModal(true); }} onDelete={(id) => showConfirmation('Delete Prize?', 'This prize will be removed.', () => deleteLuckyDrawPrize(id))} onToggleWin={(id) => { const newIds = luckyDrawWinningPrizeIds.includes(id) ? luckyDrawWinningPrizeIds.filter((i:any) => i !== id) : [...luckyDrawWinningPrizeIds, id]; setLuckyDrawWinningPrizes(newIds); }} />;
             case 'comments': return <CommentsManagementView comments={comments} onDelete={(id) => showConfirmation('Delete Comment?', 'Are you sure?', () => deleteComment(id))} onEdit={(c) => { setEditingComment(c); setCommentText(c.text); setShowCommentModal(true); }} setViewingImage={setViewingImage} />;
             case 'chat': return <AdminChatView sessions={chatSessions} onSelect={(uid) => { setActiveChatUser(uid); markChatAsRead(uid); }} activeId={activeChatUser} messages={activeChatUser ? (chatSessions.find((s:any) => s.userId === activeChatUser)?.messages || []) : []} onSend={(text, img) => { if (activeChatUser) sendChatMessage(activeChatUser, { text, imageUrl: img }); }} />;
+            case 'admin-chat': return <EmployeeChatView username={admin.username} session={chatSessions.find((s:any) => s.userId === admin.username)} onSend={(text, img) => sendChatMessage(admin.username, { text, imageUrl: img })} />;
             case 'employees': return <EmployeeManagementView employees={employees} onAdd={() => { setEditingEmp(null); setEmpForm({ name: '', username: '', password: '', role: 'employee' }); setShowEmpModal(true); }} onEdit={(e) => { setEditingEmp(e); setEmpForm({ name: e.name, username: e.username, password: e.password || '', role: e.role }); setShowEmpModal(true); }} onDelete={(id) => showConfirmation('Delete Employee?', 'Access will be revoked.', () => deleteEmployee(id))} />;
             case 'logs': return <SystemLogsView logs={activityLog} />;
             case 'settings': return (
@@ -605,7 +715,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
             )}
 
-            {/* Employee Modal (Added this missing part) */}
+            {/* Employee Modal */}
             {showEmpModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white p-6 rounded-lg w-96 space-y-4">
@@ -674,11 +784,79 @@ const AdminDashboard: React.FC = () => {
                     <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2"><Menu size={24} /></button>
                     <h2 className="text-xl font-semibold capitalize text-gray-800 ml-2 md:ml-0">{activeView.replace('-', ' ')}</h2>
                     <div className="flex items-center gap-4">
+                        {/* Notification Bell */}
+                        <div className="relative" ref={notifRef}>
+                            <button onClick={() => setShowNotifDropdown(!showNotifDropdown)} className="relative p-2 text-gray-500 hover:bg-gray-100 rounded-full transition-colors">
+                                <Bell size={24} />
+                                {totalNotifs > 0 && (
+                                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold ring-2 ring-white">
+                                        {totalNotifs > 9 ? '9+' : totalNotifs}
+                                    </span>
+                                )}
+                            </button>
+                            
+                            {showNotifDropdown && (
+                                <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-fade-in-up">
+                                    <div className="p-4 border-b bg-gray-50 flex justify-between items-center">
+                                        <h3 className="font-semibold text-gray-800">Notifications</h3>
+                                        {totalNotifs > 0 && <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-bold">{totalNotifs} New</span>}
+                                    </div>
+                                    <div className="max-h-[300px] overflow-y-auto">
+                                        {totalNotifs === 0 ? (
+                                            <div className="p-8 text-center text-gray-500 text-sm">
+                                                <div className="bg-gray-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                    <Bell size={20} className="text-gray-400" />
+                                                </div>
+                                                <p>All caught up!</p>
+                                                <p className="text-xs mt-1">No new tasks pending.</p>
+                                            </div>
+                                        ) : (
+                                            <div className="divide-y divide-gray-50">
+                                                {pDep > 0 && (
+                                                    <button onClick={() => { setActiveView('financial'); setShowNotifDropdown(false); }} className="w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center gap-3 group">
+                                                        <div className="bg-green-100 p-2 rounded-lg text-green-600 group-hover:bg-green-200 transition-colors">
+                                                            <ArrowDownCircle size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-800">{pDep} Pending Deposit{pDep > 1 ? 's' : ''}</p>
+                                                            <p className="text-xs text-gray-500 mt-0.5">Action required</p>
+                                                        </div>
+                                                    </button>
+                                                )}
+                                                {pWit > 0 && (
+                                                    <button onClick={() => { setActiveView('financial'); setShowNotifDropdown(false); }} className="w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center gap-3 group">
+                                                        <div className="bg-red-100 p-2 rounded-lg text-red-600 group-hover:bg-red-200 transition-colors">
+                                                            <ArrowUpCircle size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-800">{pWit} Pending Withdrawal{pWit > 1 ? 's' : ''}</p>
+                                                            <p className="text-xs text-gray-500 mt-0.5">Action required</p>
+                                                        </div>
+                                                    </button>
+                                                )}
+                                                {chatCount > 0 && (
+                                                    <button onClick={() => { setActiveView(admin.role === 'admin' ? 'chat' : 'admin-chat'); setShowNotifDropdown(false); }} className="w-full text-left p-4 hover:bg-gray-50 transition-colors flex items-center gap-3 group">
+                                                        <div className="bg-blue-100 p-2 rounded-lg text-blue-600 group-hover:bg-blue-200 transition-colors">
+                                                            <MessageSquare size={20} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-semibold text-gray-800">{chatCount} Unread Message{chatCount > 1 ? 's' : ''}</p>
+                                                            <p className="text-xs text-gray-500 mt-0.5">Check inbox</p>
+                                                        </div>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="text-right hidden sm:block">
-                            <p className="text-sm font-bold text-gray-900">Admin</p>
+                            <p className="text-sm font-bold text-gray-900">{admin.username}</p>
                             <p className="text-xs text-green-500">Online</p>
                         </div>
-                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold">A</div>
+                        <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 font-bold">{admin.username[0].toUpperCase()}</div>
                     </div>
                 </header>
                 <main className="flex-1 overflow-auto p-6">
