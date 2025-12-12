@@ -605,6 +605,26 @@ const AdminDashboard: React.FC = () => {
                 </div>
             )}
 
+            {/* Employee Modal (Added this missing part) */}
+            {showEmpModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 rounded-lg w-96 space-y-4">
+                        <h3 className="font-bold">{editingEmp ? 'Edit Employee' : 'Add Employee'}</h3>
+                        <input placeholder="Name" value={empForm.name} onChange={e => setEmpForm({...empForm, name: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Username" value={empForm.username} onChange={e => setEmpForm({...empForm, username: e.target.value})} className="w-full border p-2 rounded" />
+                        <input placeholder="Password" type="password" value={empForm.password} onChange={e => setEmpForm({...empForm, password: e.target.value})} className="w-full border p-2 rounded" />
+                        <select value={empForm.role} onChange={e => setEmpForm({...empForm, role: e.target.value as 'admin' | 'employee'})} className="w-full border p-2 rounded">
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <div className="flex justify-end gap-2">
+                            <button onClick={() => setShowEmpModal(false)} className="px-4 py-2 border rounded">Cancel</button>
+                            <button onClick={() => { editingEmp ? updateEmployee(editingEmp.id, empForm) : addEmployee(empForm); setShowEmpModal(false); }} className="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Plan Modal */}
             {showPlanModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
